@@ -1,5 +1,5 @@
 {
-  "display_name": "그날의 사정",
+  "display_name": "Дела того дня",
   "loading_order": 70,
   "js": "index.js",
   "css": "style.css",

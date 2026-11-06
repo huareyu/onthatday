@@ -50,12 +50,12 @@ export function buildHistoryCandidates(sources,results,ledger={},npcLedger={},mu
  const pending=[],duplicates=[],errors=[];
  for(const src of sources){
   const res=results[src.key];
-  if(!res||res.error){errors.push({index:src.index,message:res?.error||'분석 미완료'});continue;}
+  if(!res||res.error){errors.push({index:src.index,message:res?.error||'Анализ не завершён'});continue;}
   const main=ledger[src.key],npc=npcLedger[src.key];
   const valid=r=>!r?.personaId||r.personaId===personaId;
   // Guard against a previously saved record for another USER persona.
   if((main&&!valid(main))||(multiNpc&&npc&&!valid(npc))){
-   errors.push({index:src.index,message:'이전 USER 페르소나의 기록: 자동 병합 제외'});continue;
+   errors.push({index:src.index,message:'Прежняя персона USER: исключено из автоматического объединения'});continue;
   }
   const seen=new Set();
   for(let j=0;j<res.events.length;j++){
@@ -63,7 +63,7 @@ export function buildHistoryCandidates(sources,results,ledger={},npcLedger={},mu
    const key=__sourceKey||src.key,index=Number.isInteger(__sourceIndex)?__sourceIndex:src.index;
    const relatedMain=ledger[key],relatedNpc=npcLedger[key];
    if((relatedMain&&!valid(relatedMain))||(multiNpc&&relatedNpc&&!valid(relatedNpc))){
-    errors.push({index,message:'이전 USER 페르소나가 저장한 사건과 충돌: 병합하지 않음'});continue;
+    errors.push({index,message:'Прежняя USER конфликт с событиями персоны: объединение пропущено'});continue;
    }
    const identity=eventIdentity(event);
    const sameLocation=matchingRecordedEvents(ledger[key],npcLedger[key],multiNpc);
@@ -84,7 +84,7 @@ export function appendHistorySelections({ledger,npcLedger,multiNpc=false,persona
   if(!selectedIds.has(choice))continue;
   const destination=(multiNpc&&!sharedEvent(item.event))?npcLedger:ledger;
   const old=destination[item.key]||{};
-  if(old.personaId&&old.personaId!==personaId)throw new Error('다른 USER 페르소나 기록과 충돌');
+  if(old.personaId&&old.personaId!==personaId)throw new Error('Конфликт с записями другой персоны USER');
   const existing=[...matchingRecordedEvents(ledger[item.key],npcLedger[item.key],multiNpc),
    ...(item.parentKey!==item.key?matchingRecordedEvents(ledger[item.parentKey],npcLedger[item.parentKey],multiNpc):[])];
   if(existing.some(e=>eventIdentity(e)===item.identity))continue;

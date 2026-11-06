@@ -226,9 +226,9 @@ function personExcerpt(segment,name,quote){
 export function parseNpcAiSuggestions(raw,batch,previous=[]){
  const text=String(raw||'').trim().replace(/^```(?:json)?\s*/i,'').replace(/```\s*$/,'');
  const start=text.indexOf('{'),end=text.lastIndexOf('}');
- if(start<0||end<=start)throw new Error('AI 인물 검색 응답이 JSON이 아닙니다');
- let data;try{data=JSON.parse(text.slice(start,end+1));}catch{throw new Error('AI 인물 검색 JSON 형식이 잘못되었습니다');}
- if(!Array.isArray(data?.people))throw new Error('AI 인물 검색 결과에 people 목록이 없습니다');
+ if(start<0||end<=start)throw new Error('Ответ ИИ на поиск персонажей не содержит JSON');
+ let data;try{data=JSON.parse(text.slice(start,end+1));}catch{throw new Error('Неверный формат JSON при поиске персонажей с ИИ');}
+ if(!Array.isArray(data?.people))throw new Error('В результате поиска ИИ отсутствует список people');
  const lookup=new Map(batch.map(v=>[v.ref,v]));
  const candidates=[];let rejected=0;
  for(const row of data.people.slice(0,80)){
@@ -242,9 +242,9 @@ export function parseNpcAiSuggestions(raw,batch,previous=[]){
  }
  return {profiles:mergeNpcCandidates(previous,candidates),accepted:candidates.length,rejected};
 }
-export function namedTarget(name,description='',source='직접 추가',aliases=[]){
+export function namedTarget(name,description='',source='Добавлено вручную',aliases=[]){
  const clean=String(name||'').trim().slice(0,100),card=String(description||'').trim().slice(0,12000);
- if(!clean)throw new Error('NPC 이름을 입력하세요');
+ if(!clean)throw new Error('Введите имя NPC');
  return {id:npcTargetId('manual',clean),name:clean,card,source,aliases:aliases.filter(Boolean).slice(0,12),...inferExplicit(card)};
 }
 export function npcCanon(target){

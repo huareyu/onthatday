@@ -16,9 +16,9 @@ export function discardSetupChoices(preferences){
  };
 }
 export function resetProfileChoices(meta,{role='both',field=null,target=null}={}){
- if(!meta)throw new Error('채팅 설정이 없습니다');
- if(!['char','user','both'].includes(role))throw new Error('역할 오류');
- if(field!==null&&!RESETTABLE_FIELDS.includes(field))throw new Error('해제할 항목이 올바르지 않습니다');
+ if(!meta)throw new Error('Нет настроек чата');
+ if(!['char','user','both'].includes(role))throw new Error('Неверная роль');
+ if(field!==null&&!RESETTABLE_FIELDS.includes(field))throw new Error('Неверное поле для открепления');
  const roles=role==='both'?['char','user']:[role];
  let count=0;
  for(const r of roles){

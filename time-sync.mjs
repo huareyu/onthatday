@@ -29,12 +29,12 @@ export function recoverHistoryTime(chat){
    if(occupied.some(r=>overlap({start,end},r)))return;
    occupied.push({start,end});
    const context=text.slice(Math.max(0,start-75),Math.min(text.length,end+60));
-   const caution=CONTEXT.test(context)?'회상/가정 등 비현재 서술일 수 있음':reason;
+   const caution=CONTEXT.test(context)?'Возможно воспоминание или предположение, а не текущее событие':reason;
    if(hours===null||caution){
-    uncertain.push({key,index:i,offset:start,evidence,reason:caution||'정확한 경과 시간을 확정할 수 없음'});
+    uncertain.push({key,index:i,offset:start,evidence,reason:caution||'Нельзя определить точное прошедшее время'});
     return;
    }
-   if(!Number.isFinite(hours)||hours<=0||hours>8760){warnings.push(`메시지 ${i+1}: 처리 범위를 벗어난 시간 기록`);return;}
+   if(!Number.isFinite(hours)||hours<=0||hours>8760){warnings.push(`Сообщение ${i+1}: Время выходит за допустимый диапазон`);return;}
    matches.push({key,index:i,offset:start,kind:'time_advance',hours:Math.round(hours*100)/100,evidence,speaker:message.is_user?'USER':'CHAR'});
   }
   // Numerical phrases with explicit passage of time, including "3시간이 흘러", "2일이 지난 후".
@@ -45,12 +45,12 @@ export function recoverHistoryTime(chat){
    // Calendar months do not have an exact duration without a calendar anchor.
    if(unit==='개월'||unit==='달')hours=null;
    const snippet=text.slice(Math.max(0,m.index-8),Math.min(text.length,m.index+m[0].length+12));
-   addTime(m.index,m.index+m[0].length,hours,m[0],UNSURE.test(snippet)?'대략적인 시간 표현':(hours===null?'달/개월 길이는 기준 날짜가 없어 확정 불가':''));
+   addTime(m.index,m.index+m[0].length,hours,m[0],UNSURE.test(snippet)?'Приблизительное указание времени':(hours===null?'Длительность месяца неизвестна без исходной даты':''));
   }
   // Calendar transitions are not automatically equal to 24 elapsed hours.
   for(const m of text.matchAll(/(?:한|두|세|네|몇)\s*(?:달|개월|주|시간|분|일)\s*(?:뒤|후)/g)) {
    if(occupied.some(r=>overlap({start:m.index,end:m.index+m[0].length},r)))continue;
-   addTime(m.index,m.index+m[0].length,null,m[0],'정확한 기간이나 달력 기준 날짜가 없음');
+   addTime(m.index,m.index+m[0].length,null,m[0],'Нет точной длительности или исходной календарной даты');
   }
   // Korean lexical durations and day-boundary cues.
   for(const [pattern,value] of LEXICAL){
@@ -63,14 +63,14 @@ export function recoverHistoryTime(chat){
   const cycle=/(?:^|[\s\n.!?])(?:(CHAR|USER|캐릭터|유저|상대|나(?:는|의)?|그(?:는|의)?|그녀(?:는|의)?)\s*(?:의|가|는)?\s*)?(히트|러트|heat|rut)\s*(?:가|이|는)?\s*(?:시작(?:됐다|되었다|했다|함)?|발현(?:됐다|되었다|했다)?)/gi;
   for(const m of text.matchAll(cycle)){
    const role=m[1],person=/^(?:USER|유저)$/i.test(role||'')?'user':/^(?:CHAR|캐릭터)$/i.test(role||'')?'char':null;
-   if(!person){warnings.push(`메시지 ${i+1}: 주기 시작 주체가 불명확하여 제외 (${m[0].trim().slice(0,55)})`);continue;}
+   if(!person){warnings.push(`Сообщение ${i+1}: Пропущено: неясно, у кого начался цикл (${m[0].trim().slice(0,55)})`);continue;}
    matches.push({key,index:i,offset:m.index,kind:/러트|rut/i.test(m[2])?'rut_start':'heat_start',person,evidence:m[0].trim(),speaker:message.is_user?'USER':'CHAR'});
   }
  }
  matches.sort((a,b)=>a.index-b.index||a.offset-b.offset);
  uncertain.sort((a,b)=>a.index-b.index||a.offset-b.offset);
  const counts=new Map();for(const x of matches)counts.set(x.index,(counts.get(x.index)||0)+1);
- for(const [i,n] of counts)if(n>1)warnings.push(`메시지 ${i+1}: ${n}개 시간/주기 단서가 발견됨. 중복 서술인지 확인하세요.`);
+ for(const [i,n] of counts)if(n>1)warnings.push(`Сообщение ${i+1}: ${n}указаний времени / цикла. Проверьте, нет ли повторов.`);
  return {matches,warnings,uncertain,scanned:(chat||[]).length};
 }
 export function removeHistorySync(ledger){

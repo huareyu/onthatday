@@ -35,15 +35,15 @@ export const DEFAULT_CONFIG = Object.freeze({
 });
 // Symptoms are fictional narrative defaults, never clinical claims.
 export const ADVERSE_SYMPTOMS = Object.freeze({
- oral_suppressant:['두통','어지러움','일시적인 페로몬 감각 둔화'],
- long_suppressant:['피로','체온 변화','일시적인 주기 불규칙'],
- emergency_suppressant:['메스꺼움','몸의 열감','일시적인 감각 과민'],
- scent_blocker:['후각 둔화','피부 건조감','잔향의 불안정'],
- symptom_inducer:['발열감','심박 상승','초조함'],
- cycle_inducer:['복부 불편감','극심한 피로','불규칙한 페로몬 발산'],
- unlicensed_mixture:['급격한 체온 변화','현기증','페로몬 조절 불안정'],
- emergency_contraceptive:['메스꺼움','피로','일시적인 주기 변화'],
- oral_contraceptive:['두통','메스꺼움','가벼운 피로']
+ oral_suppressant:['Головная боль','Головокружение','Временное снижение чувствительности к феромонам'],
+ long_suppressant:['Усталость','Изменение температуры тела','Временная нерегулярность цикла'],
+ emergency_suppressant:['Тошнота','Ощущение жара','Временная повышенная чувствительность'],
+ scent_blocker:['Притупление обоняния','Сухость кожи','Нестабильный остаточный аромат'],
+ symptom_inducer:['Ощущение жара','Учащённое сердцебиение','Беспокойство'],
+ cycle_inducer:['Дискомфорт в животе','Сильная усталость','Нерегулярное выделение феромонов'],
+ unlicensed_mixture:['Резкие изменения температуры тела','Головокружение','Нестабильный контроль феромонов'],
+ emergency_contraceptive:['Тошнота','Усталость','Временное изменение цикла'],
+ oral_contraceptive:['Головная боль','Тошнота','Лёгкая усталость']
 });
 const CLAMP=(n,lo,hi)=>Math.min(hi,Math.max(lo,n));
 export const clamp=CLAMP;
@@ -534,8 +534,8 @@ export function replay(seed,canon,config,rows,overrides={}){
    else if(k==='gestate')p.fertile.gestate=!!v;
    else if(k==='impregnate')p.fertile.impregnate=!!v;
    else if(k==='menstruationEnabled')p.menstruation.enabled=!!v;
-   else if(k==='baseCondition'&&validVitalNumber(v)){p.vitalBaseline.condition=Math.round(v);p.vitalBaseline.source='사용자·프로필 설정';}
-   else if(k==='basePheromone'&&validVitalNumber(v)){p.vitalBaseline.emission=Math.round(v);p.vitalBaseline.source='사용자·프로필 설정';}
+   else if(k==='baseCondition'&&validVitalNumber(v)){p.vitalBaseline.condition=Math.round(v);p.vitalBaseline.source='Настройка пользователя / профиля';}
+   else if(k==='basePheromone'&&validVitalNumber(v)){p.vitalBaseline.emission=Math.round(v);p.vitalBaseline.source='Настройка пользователя / профиля';}
   }
   // An older provisional ABO roll must not determine baseline emission after
   // a user selects another ABO category. Recalculate against the final identity.
@@ -543,7 +543,7 @@ export function replay(seed,canon,config,rows,overrides={}){
   p.vitalBaseline={...rebased,
    condition:validVitalNumber(changes?.baseCondition)?Math.round(changes.baseCondition):rebased.condition,
    emission:validVitalNumber(changes?.basePheromone)?Math.round(changes.basePheromone):rebased.emission,
-   source:validVitalNumber(changes?.baseCondition)||validVitalNumber(changes?.basePheromone)?'사용자·프로필 설정':rebased.source};
+   source:validVitalNumber(changes?.baseCondition)||validVitalNumber(changes?.basePheromone)?'Настройка пользователя / профиля':rebased.source};
   if(!Object.hasOwn(changes,'gestate'))p.fertile.gestate=p.secondary==='omega'||p.sex==='female'&&['alpha','beta'].includes(p.secondary);
   if(!Object.hasOwn(changes,'impregnate'))p.fertile.impregnate=p.secondary==='alpha'||p.sex==='male'&&p.secondary==='beta';
   if(!Object.hasOwn(changes,'menstruationEnabled'))p.menstruation.enabled=p.secondary==='omega'||p.sex==='female';

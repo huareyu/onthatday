@@ -14,13 +14,13 @@ export function mountExtensionLaunchers(doc,openPanel){
   entry.className='list-group-item flex-container flexGap5';
   entry.setAttribute('role','button');
   entry.setAttribute('tabindex','0');
-  entry.setAttribute('aria-label','그날의 사정 열기');
-  entry.title='그날의 사정 상태창·초기 분석·설정 열기';
+  entry.setAttribute('aria-label','Открыть «Дела того дня»');
+  entry.title='Открыть состояние, начальный анализ и настройки «Дел того дня»';
   const glyph=doc.createElement('span');
   glyph.className='fa-solid fa-heart-pulse extensionsMenuExtensionButton';
   glyph.setAttribute('aria-hidden','true');
   const name=doc.createElement('span');
-  name.textContent='그날의 사정';
+  name.textContent='Дела того дня';
   entry.append(glyph,name);
   entry.addEventListener('click',openPanel);
   entry.addEventListener('keydown',event=>{

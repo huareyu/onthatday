@@ -17,12 +17,12 @@ export function initialVitalBaseline(canon={},secondary='unknown',name=''){
  let emission=({alpha:61,omega:55,beta:20,unknown:44})[secondary]??44;
  emission+=(hash(key+':scent')%17)-8;
  const signals=[];
- if(matches(desc,[/체력(?:이|은)?\s*(?:약|부족|낮)/,/허약|병약|쇠약|만성\s*피로|몸이\s*약|frail|poor\s*stamina|chronically\s*(?:ill|tired)/i])){condition-=17;signals.push('체력 취약');}
- if(matches(desc,[/체력(?:이|은)?\s*(?:좋|강)|튼튼|건강한\s*체질|강인한\s*체력|운동선수|athletic|excellent\s*stamina|robust/i])){condition+=12;signals.push('체력 양호');}
- if(matches(desc,[/페로몬.{0,20}(?:강|진하|짙|폭발|넘치)|(?:strong|intense|overpowering)\s*pheromon/i])){emission+=22;signals.push('강한 페로몬 설정');}
- if(matches(desc,[/페로몬.{0,24}(?:약|희미|미약|거의\s*없|잘\s*느껴지지)|(?:weak|faint|subtle)\s*pheromon/i])){emission-=20;signals.push('약한 페로몬 설정');}
- if(matches(desc,[/페로몬.{0,22}(?:억제|차단|봉인)|pheromone\s*suppress/i])){emission-=23;signals.push('지속적 페로몬 억제 설정');}
- return {condition:clamp(condition),emission:clamp(emission),source:signals.length?'카드·페르소나 기반 추정':'개별 기초 추정',reasons:signals};
+ if(matches(desc,[/체력(?:이|은)?\s*(?:약|부족|낮)/,/허약|병약|쇠약|만성\s*피로|몸이\s*약|frail|poor\s*stamina|chronically\s*(?:ill|tired)/i])){condition-=17;signals.push('Низкая выносливость');}
+ if(matches(desc,[/체력(?:이|은)?\s*(?:좋|강)|튼튼|건강한\s*체질|강인한\s*체력|운동선수|athletic|excellent\s*stamina|robust/i])){condition+=12;signals.push('Хорошая выносливость');}
+ if(matches(desc,[/페로몬.{0,20}(?:강|진하|짙|폭발|넘치)|(?:strong|intense|overpowering)\s*pheromon/i])){emission+=22;signals.push('Сильные феромоны по описанию');}
+ if(matches(desc,[/페로몬.{0,24}(?:약|희미|미약|거의\s*없|잘\s*느껴지지)|(?:weak|faint|subtle)\s*pheromon/i])){emission-=20;signals.push('Слабые феромоны по описанию');}
+ if(matches(desc,[/페로몬.{0,22}(?:억제|차단|봉인)|pheromone\s*suppress/i])){emission-=23;signals.push('Постоянное подавление феромонов по описанию');}
+ return {condition:clamp(condition),emission:clamp(emission),source:signals.length?'Оценка по карточке и персоне':'Индивидуальная базовая оценка',reasons:signals};
 }
 export function recalculateVitals(person,storyHours){
  const base=person.vitalBaseline||{condition:72,emission:45};

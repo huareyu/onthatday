@@ -2,7 +2,7 @@
 export const SHARED_ANALYSIS_SETTINGS_KEY='abo_pixel_tracker_analysis';
 export const SHARED_ANALYSIS_FIELDS=Object.freeze(['analysisConnection','customApiUrl','customModel','setupMaxTokens','postprocessMode','postprocessConnection','postprocessScopes']);
 export function ensureSharedAnalysisSettings(extensionStore,legacyConfig={},defaults={}){
- if(!extensionStore||typeof extensionStore!=='object')throw new Error('확장 설정 저장소가 없습니다');
+ if(!extensionStore||typeof extensionStore!=='object')throw new Error('Хранилище настроек расширения недоступно');
  let shared=extensionStore[SHARED_ANALYSIS_SETTINGS_KEY];
  let created=false;
  if(!shared||typeof shared!=='object'||Array.isArray(shared)){
@@ -18,7 +18,7 @@ export function sharedAnalysisConfig(extensionStore,legacyConfig={},defaults={})
  return ensureSharedAnalysisSettings(extensionStore,legacyConfig,defaults).shared;
 }
 export function setSharedAnalysisSetting(extensionStore,key,value,legacyConfig={},defaults={}){
- if(!SHARED_ANALYSIS_FIELDS.includes(key))throw new Error(`공통 설정 항목 아님: ${key}`);
+ if(!SHARED_ANALYSIS_FIELDS.includes(key))throw new Error(`Поле не относится к общим настройкам: ${key}`);
  const {shared}=ensureSharedAnalysisSettings(extensionStore,legacyConfig,defaults);
  shared[key]=value;
  return shared;

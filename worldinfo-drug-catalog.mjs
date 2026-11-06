@@ -2,27 +2,27 @@
  * Do not infer trade names, doses, person-specific medication events, or custom drugs.
  */
 const GROUPS = Object.freeze([
-  {key:'MED-01', title:'억제·차단', definitions:[
-    {needle:/\broutine oral suppressant\s*:/i, title:'일반 경구 억제제', description:'히트·러트 증상을 완화하는 일반 억제제.'},
-    {needle:/\blong-acting suppressant\s*:/i, title:'장기 억제제', description:'증상을 장기간 완화하며, 주기·임신에도 영향을 줄 수 있음.'},
-    {needle:/\bemergency suppressant\s*:/i, title:'응급 억제제', description:'갑작스러운 증상을 단기간 완화.'},
-    {needle:/\bpheromone blocker\s*:/i, title:'페로몬 차단제', description:'외부로 감지되는 페로몬 발산을 줄임.'},
+  {key:'MED-01', title:'Подавление и блокировка', definitions:[
+    {needle:/\broutine oral suppressant\s*:/i, title:'Обычный пероральный подавитель', description:'Обычный подавитель симптомов течки / гона.'},
+    {needle:/\blong-acting suppressant\s*:/i, title:'Подавитель длительного действия', description:'Смягчает симптомы надолго, может влиять на цикл и беременность.'},
+    {needle:/\bemergency suppressant\s*:/i, title:'Экстренный подавитель', description:'Кратковременно облегчает внезапные симптомы.'},
+    {needle:/\bpheromone blocker\s*:/i, title:'Блокатор феромонов', description:'Снижает выделение феромонов, воспринимаемых окружающими.'},
   ]},
-  {key:'MED-02', title:'유도·비승인', definitions:[
-    {needle:/\bsymptom[- ](?:only|type)\b/i, title:'유사 주기 유도제', description:'히트·러트와 비슷한 증상을 유도.'},
-    {needle:/\b(?:genuine cycle-triggering|cycle-type)\b/i, title:'주기 유도제', description:'히트·러트 주기를 실제로 유발하거나 주기 시점을 변경할 수 있음.'},
+  {key:'MED-02', title:'Индукторы и неодобренные препараты', definitions:[
+    {needle:/\bsymptom[- ](?:only|type)\b/i, title:'Индуктор симптомов, похожих на цикл', description:'Вызывает симптомы, похожие на течку / гон.'},
+    {needle:/\b(?:genuine cycle-triggering|cycle-type)\b/i, title:'Индуктор цикла', description:'Может вызвать течку / гон или изменить время цикла.'},
   ]},
-  {key:'MED-02', title:'그 외 월드 인포 약물', definitions:[
-    {needle:/\bunlicensed mixed compound\b/i, title:'비승인 혼합약물', description:'설정·목적에 따라 억제·유도·주기 불안정 등 여러 작용을 나타낼 수 있음.'},
+  {key:'MED-02', title:'Другие препараты из книги мира', definitions:[
+    {needle:/\bunlicensed mixed compound\b/i, title:'Неодобренная смесь', description:'В зависимости от мира и назначения может подавлять, вызывать или нарушать цикл.'},
   ]},
-  {key:'FERT-03', title:'피임', definitions:[
-    {needle:/\bemergency contraception is available\b/i, title:'응급 피임제', description:'피임 없는 성교 후, 임신 가능 사건의 위험도를 낮춤.'},
+  {key:'FERT-03', title:'Контрацепция', definitions:[
+    {needle:/\bemergency contraception is available\b/i, title:'Экстренный контрацептив', description:'Снижает риск зачатия после незащищённого полового контакта.'},
   ]},
 ]);
 function entriesFromWorldInfo(worldInfo){
-  if(!worldInfo || typeof worldInfo!=='object')throw new TypeError('World Info 형식이 올바르지 않습니다.');
+  if(!worldInfo || typeof worldInfo!=='object')throw new TypeError('Неверный формат книги мира.');
   const entries=worldInfo.entries;
-  if(!entries || typeof entries!=='object')throw new TypeError('World Info entries가 없습니다.');
+  if(!entries || typeof entries!=='object')throw new TypeError('В книге мира отсутствует entries.');
   return Object.values(entries).filter(e=>e&&typeof e.comment==='string'&&typeof e.content==='string');
 }
 export function extractDrugClassesFromWorldInfo(worldInfo){

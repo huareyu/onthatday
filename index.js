@@ -25,7 +25,7 @@ import {RESETTABLE_FIELDS,resetProfileChoices} from './profile-reset.mjs';
 const STORAGE='abo_pixel_tracker_independent_v1';
 const PROMPT='ABO_PIXEL_TRACKER_CONTINUITY_V1';
 const S=()=>SillyTavern.getContext();
-let active=false, working=false, state=null, status='준비됨',panelOpen=false, tab='status', lastKey='';
+let active=false, working=false, state=null, status='Готово',panelOpen=false, tab='status', lastKey='';
 let timeSyncPreview=null,historyStatePreview=null,historyScanCancelled=false;
 let postprocessBusy=false,postprocessCancel=false,postprocessPending=false;
 const autoPostprocessFailures=new Set();
@@ -34,23 +34,23 @@ let npcCandidates=[], npcScanChatId='', npcSearch='', npcReviewEntries=[], npcSc
 const html=x=>String(x??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const el=(id)=>document.getElementById(id);
 const fmt=(n)=>Number.isFinite(n)?Math.round(n*10)/10:0;
-function log(...v){console.log('[그날의 사정]',...v);}
+function log(...v){console.log('[Дела того дня]',...v);}
 function displayAlertKo(message,hideTruth=false){
  const raw=String(message??'');
  const confirmed=raw.match(/^(.+): internally confirmed conception \(character awareness remains separate\)$/);
- if(confirmed)return hideTruth?'':`${confirmed[1]}: 임신 판정 내부 확정 (인물의 인지 상태와 별개)`;
+ if(confirmed)return hideTruth?'':`${confirmed[1]}: Зачатие подтверждено внутренним расчётом (осведомлённость персонажа учитывается отдельно)`;
  const reason=raw.match(/^Exposure not rolled: (.+)$/);
  if(reason){
-  const reasons={pregnancy_disabled:'임신 기능 비활성',gate_failed:'필수 성립 조건 불충족',already_pregnant:'이미 임신 상태',ovulation_suppressed:'배란 억제'};
-  return `임신 가능성 판정 제외 · ${reasons[reason[1]]||reason[1]}`;
+  const reasons={pregnancy_disabled:'Симуляция беременности отключена',gate_failed:'Обязательные условия не выполнены',already_pregnant:'Беременность уже наступила',ovulation_suppressed:'Овуляция подавлена'};
+  return `Расчёт вероятности беременности пропущен · ${reasons[reason[1]]||reason[1]}`;
  }
  return raw;
 }
 function eventHiddenByPrivacy(kind,config){return config?.hideTruth===true&&['exposure','pregnancy_reveal','pregnancy_end','delivery'].includes(kind);}
 function eventSummaryKo(e){
  const person=personRoleLabel(e.person);
- const kind=e.kind==='vital_observation'?'신체·페로몬 상태 변화':localizedText('events','shared','kind',String(e.kind||''),eventKindLabel(e.kind));
- if(e.kind==='time_advance'&&Number.isFinite(e.hours))return `${kind} · ${fmt(e.hours)}시간`;
+ const kind=e.kind==='vital_observation'?'Изменение состояния тела и феромонов':localizedText('events','shared','kind',String(e.kind||''),eventKindLabel(e.kind));
+ if(e.kind==='time_advance'&&Number.isFinite(e.hours))return `${kind} · ${fmt(e.hours)} ч`;
  return e.person?`${person} · ${kind}`:kind;
 }
 
@@ -58,9 +58,9 @@ function eventSummaryKo(e){
 // No separate browser request to extension .json assets is needed.
 function worldInfoDrugReferenceHtml(){
   const catalog=BUNDLED_WORLDINFO_DRUG_CATALOG;
-  const headline=`동봉된 월드 인포 약물 종류 · ${catalog.count}종`;
-  const groups=catalog.groups.map(group=>`<div class="abop-drug-group"><h4>${html(group.name)} <small>${html(group.source)}${group.disabled?' · 항목 비활성':''}</small></h4>${group.items.map(item=>`<div class="abop-drug-line"><b>${html(item.title)}</b><p>${html(item.description)}</p></div>`).join('')}</div>`).join('');
-  return `<details class="abop-drug-reference"><summary>${headline}</summary>${groups||'<p class="abop-muted">약물 분류를 찾을 수 없습니다.</p>'}</details>`;
+  const headline=`Препараты из комплектной книги мира · ${catalog.count} типов`;
+  const groups=catalog.groups.map(group=>`<div class="abop-drug-group"><h4>${html(group.name)} <small>${html(group.source)}${group.disabled?' · запись отключена':''}</small></h4>${group.items.map(item=>`<div class="abop-drug-line"><b>${html(item.title)}</b><p>${html(item.description)}</p></div>`).join('')}</div>`).join('');
+  return `<details class="abop-drug-reference"><summary>${headline}</summary>${groups||'<p class="abop-muted">Категории препаратов не найдены.</p>'}</details>`;
 }
 
 function sharedAnalysisSettings(){
@@ -77,32 +77,32 @@ function saveSharedAnalysisSetting(key,value){
 function connectionValue(config){return String(config?.analysisConnection||'');} // empty = current connection
 function supportedProfiles(){
  try{return ConnectionManagerRequestService.getSupportedProfiles()||[];}
- catch(e){console.debug('[그날의 사정] profile listing unavailable',readableProfileError(e));return [];}
+ catch(e){console.debug('[Дела того дня] profile listing unavailable',readableProfileError(e));return [];}
 }
 function connectionOptions(config){
  const current=connectionValue(config), profiles=supportedProfiles();
- let htmlOptions='<option value="" '+(!current?'selected':'')+'>현재 연결 사용 (기본)</option>';
+ let htmlOptions='<option value="" '+(!current?'selected':'')+'>Текущее подключение (по умолчанию)</option>';
  for(const p of [...profiles].sort((a,b)=>String(a.name).localeCompare(String(b.name)))){
   const v=`profile:${p.id}`;
-  htmlOptions+=`<option value="${html(v)}" ${current===v?'selected':''}>저장됨 · ${html(p.name||p.id)} (${html(p.model||p.api||'')})</option>`;
+  htmlOptions+=`<option value="${html(v)}" ${current===v?'selected':''}>Сохранено · ${html(p.name||p.id)} (${html(p.model||p.api||'')})</option>`;
  }
- if(current.startsWith('profile:')&&!profiles.some(p=>`profile:${p.id}`===current))htmlOptions+=`<option value="${html(current)}" selected>선택한 프로필을 찾을 수 없음</option>`;
- htmlOptions+=`<option value="custom" ${current==='custom'?'selected':''}>직접 API 연결 (OpenAI 호환)</option>`;
+ if(current.startsWith('profile:')&&!profiles.some(p=>`profile:${p.id}`===current))htmlOptions+=`<option value="${html(current)}" selected>Выбранный профиль не найден</option>`;
+ htmlOptions+=`<option value="custom" ${current==='custom'?'selected':''}>Прямое подключение к API (совместимому с OpenAI)</option>`;
  return htmlOptions;
 }
 function postprocessConnectionOptions(current){
- let result=`<option value="same" ${current==='same'?'selected':''}>분석 연결 그대로 사용</option><option value="current" ${current==='current'?'selected':''}>현재 SillyTavern 연결</option>`;
+ let result=`<option value="same" ${current==='same'?'selected':''}>Использовать подключение анализа</option><option value="current" ${current==='current'?'selected':''}>Текущее подключение SillyTavern</option>`;
  for(const p of [...supportedProfiles()].sort((a,b)=>String(a.name).localeCompare(String(b.name)))){
   const id=`profile:${p.id}`;
-  result+=`<option value="${html(id)}" ${current===id?'selected':''}>별도 프로필 · ${html(p.name||p.id)}</option>`;
+  result+=`<option value="${html(id)}" ${current===id?'selected':''}>Другой профиль · ${html(p.name||p.id)}</option>`;
  }
- if(current.startsWith('profile:')&&!supportedProfiles().some(p=>`profile:${p.id}`===current))result+=`<option value="${html(current)}" selected>선택한 후처리 프로필을 찾을 수 없음</option>`;
+ if(current.startsWith('profile:')&&!supportedProfiles().some(p=>`profile:${p.id}`===current))result+=`<option value="${html(current)}" selected>Выбранный профиль перевода не найден</option>`;
  return result;
 }
 function directEndpoint(raw){
  const url=new URL(String(raw).trim());
- if(!['https:','http:'].includes(url.protocol))throw new Error('http(s) API 주소만 사용 가능합니다');
- if(url.protocol==='http:'&&!['localhost','127.0.0.1','[::1]'].includes(url.hostname)&&url.origin!==location.origin)throw new Error('API 키 보호를 위해 원격 서버는 HTTPS를 사용하세요');
+ if(!['https:','http:'].includes(url.protocol))throw new Error('Разрешены только адреса API по http(s)');
+ if(url.protocol==='http:'&&!['localhost','127.0.0.1','[::1]'].includes(url.hostname)&&url.origin!==location.origin)throw new Error('Для защиты ключа API используйте HTTPS для удалённого сервера');
  const path=url.pathname.replace(/\/+$/,'');
  url.pathname=/\/chat\/completions$/.test(path)?path:`${path||''}/chat/completions`;
  return url.toString();
@@ -110,25 +110,25 @@ function directEndpoint(raw){
 async function analysisRequest(systemPrompt,prompt,maxTokens=2200,connectionOverride=null){
  const config=analysisConfig(), chosen=connectionOverride===null?connectionValue(config):connectionOverride;
  if(!chosen){
-  if(typeof S().generateRaw!=='function')throw new Error('현재 SillyTavern 연결의 generateRaw가 없습니다');
+  if(typeof S().generateRaw!=='function')throw new Error('У текущего подключения SillyTavern отсутствует generateRaw');
   return extractedText(await S().generateRaw({systemPrompt,prompt,responseLength:maxTokens}));
  }
  if(chosen.startsWith('profile:')){
   const id=chosen.slice(8);
-  if(!supportedProfiles().some(p=>p.id===id))throw new Error('선택한 저장 연결 프로필이 없거나 지원되지 않습니다');
+  if(!supportedProfiles().some(p=>p.id===id))throw new Error('Выбранный сохранённый профиль отсутствует или не поддерживается');
   return await requestUsingProfile(ConnectionManagerRequestService,id,systemPrompt,prompt,maxTokens);
  }
  if(chosen==='custom'){
-  if(!config.customApiUrl||!config.customModel)throw new Error('직접 API 주소와 모델명을 입력하세요');
+  if(!config.customApiUrl||!config.customModel)throw new Error('Укажите адрес API и название модели');
   const endpoint=directEndpoint(config.customApiUrl);
   const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',...(sessionApiKey?{'Authorization':`Bearer ${sessionApiKey}`}:{})},body:JSON.stringify({model:config.customModel,stream:false,temperature:0.1,max_tokens:maxTokens,messages:[{role:'system',content:systemPrompt},{role:'user',content:prompt}]})});
-  if(!r.ok)throw new Error(`직접 API 오류 HTTP ${r.status} (브라우저 CORS 정책/모델 설정 확인)`);
+  if(!r.ok)throw new Error(`Ошибка прямого API · HTTP ${r.status} (проверьте CORS браузера и настройки модели)`);
   const j=await r.json();
   const content=extractedText(j);
-  if(typeof content!=='string'||!content.trim())throw new Error('직접 API에서 텍스트 응답이 없습니다');
+  if(typeof content!=='string'||!content.trim())throw new Error('Прямое API не вернуло текстовый ответ');
   return content;
  }
- throw new Error('알 수 없는 분석 연결 설정입니다');
+ throw new Error('Неизвестная настройка подключения анализа');
 }
 function postprocessSettings(){
  const shared=sharedAnalysisSettings();
@@ -150,10 +150,10 @@ function localizedScene(scope,role,field,raw){
  return localizedText(scope,role,field,raw,sceneDisplayLabel(raw));
 }
 function localizedSceneSummary(scene,role){
- if(!scene||typeof scene!=='object')return '기록 없음';
+ if(!scene||typeof scene!=='object')return 'Нет записей';
  const pieces=['posture','contact','vocal','speech'].filter(k=>scene[k]).map(k=>localizedScene('history',role,k,scene[k]));
  for(const play of (Array.isArray(scene.play)?scene.play:[]))pieces.push(localizedScene('history',role,'play',play));
- return [...new Set(pieces.filter(Boolean))].join(' · ')||'세부 내용 없음';
+ return [...new Set(pieces.filter(Boolean))].join(' · ')||'Нет подробностей';
 }
 function postprocessMatches(m,origin){
  return S()?.chatId===origin.chatId&&meta(false)===m&&m.userPersonaIdentity===origin.persona&&selectedNpcId(m)===origin.target;
@@ -164,49 +164,49 @@ async function runDisplayPostprocess({automatic=false}={}){
  const m=meta(false);if(!m)return;
  const settings=postprocessSettings();
  if(['none','rules'].includes(settings.mode)){
-  if(!automatic)setStatus('현재 모드에서는 AI 후처리가 비활성화되어 있습니다. 설정에서 자동 또는 AI 윤문을 선택하세요.');
+  if(!automatic)setStatus('Обработка через ИИ отключена. Выберите в настройках автоматический перевод или редактирование с ИИ.');
   return;
  }
  const list=choosePostprocessCandidates(state,m.displayPostprocessCache||{},m.preferenceTranslations||{},settings)
   .filter(x=>!(x.scope==='events'&&eventHiddenByPrivacy(x.source,m.config)))
   .filter(x=>!automatic||!autoPostprocessFailures.has(`${S().chatId}:${x.scope}:${x.role}:${x.field}:${x.source}`));
  // The explicit button uses consecutive batches; auto-mode only considers the latest state.
- if(!list.length){if(!automatic)setStatus('한국어로 정리할 새 항목이 없습니다.');return;}
- if(!automatic&&!window.confirm(`현재 표시에서 한국어 후처리가 필요한 ${list.length}개 항목을 AI로 정리할까요? 추가 API 호출과 비용이 발생할 수 있습니다. 원본 기록은 변경되지 않습니다.`))return;
+ if(!list.length){if(!automatic)setStatus('Новых элементов для перевода на русский нет.');return;}
+ if(!automatic&&!window.confirm(`Перевести на русский ${list.length} элементов с помощью ИИ? Возможны дополнительные расходы на API. Исходные записи сохраняются.`))return;
  const origin={chatId:S().chatId,persona:m.userPersonaIdentity,target:selectedNpcId(m)};
  const connection=settings.connection==='same'?null:settings.connection==='current'?'':settings.connection;
  const batches=batchPostprocess(list);
  postprocessBusy=true;postprocessCancel=false;
- if(!automatic){setStatus(`한국어 후처리 0/${list.length}개`);render();}
+ if(!automatic){setStatus(`Перевод на русский: 0/${list.length} `);render();}
  let changed=0,failed=0,processed=0;
  try{
   for(const chunk of batches){
    if(postprocessCancel)break;
-   if(!postprocessMatches(m,origin))throw new Error('채팅·페르소나·NPC가 변경되어 후처리 중단');
+   if(!postprocessMatches(m,origin))throw new Error('Чат, персона или NPC изменились: перевод остановлен');
    try{
     const raw=await analysisRequest(DISPLAY_POSTPROCESS_SYSTEM,postprocessPrompt(chunk),Math.min(3200,Math.max(800,chunk.length*175)),connection);
-    if(!postprocessMatches(m,origin))throw new Error('채팅·페르소나·NPC 변경');
+    if(!postprocessMatches(m,origin))throw new Error('Изменился чат, персона или NPC');
     const translated=parsePostprocessReply(raw,chunk);
     if(Object.keys(translated).length){
      const previous=m.displayPostprocessCache||{};
      m.displayPostprocessCache=Object.fromEntries(Object.entries({...previous,...translated}).slice(-1500));
-     if(!await persist()){m.displayPostprocessCache=previous;throw new Error('표시 캐시 저장 실패');}
+     if(!await persist()){m.displayPostprocessCache=previous;throw new Error('Не удалось сохранить кэш перевода');}
      changed+=Object.keys(translated).length;
     }
     failed+=chunk.length-Object.keys(translated).length;
     if(automatic)for(const entry of chunk)if(!Object.hasOwn(translated,postprocessKey(entry)))autoPostprocessFailures.add(`${origin.chatId}:${entry.scope}:${entry.role}:${entry.field}:${entry.source}`);
    }catch(err){
     if(!postprocessMatches(m,origin))throw err;
-    console.warn('[그날의 사정] Korean postprocessing skipped batch',err);
+    console.warn('[Дела того дня] Russian postprocessing skipped batch',err);
     failed+=chunk.length;
     if(automatic)for(const entry of chunk)autoPostprocessFailures.add(`${origin.chatId}:${entry.scope}:${entry.role}:${entry.field}:${entry.source}`);
    }
    processed+=chunk.length;
-   if(!automatic)setStatus(`한국어 후처리 ${processed}/${list.length}개 · 적용 ${changed} · 미처리 ${failed}`);
+   if(!automatic)setStatus(`Перевод на русский ${processed}/${list.length} · применено ${changed} · не обработано ${failed}`);
   }
-  if(!automatic)setStatus(`${postprocessCancel?'후처리 중단':'후처리 완료'} · 한국어 ${changed}개 · 미처리 ${failed}개 (원본 보존)`);
-  else if(failed){console.warn('[그날의 사정] postprocessing skipped',failed,'items');setStatus(`분석 완료 · 한국어 표시 ${failed}개 미처리 (원본 유지)`);}
- }catch(err){if(!automatic)setStatus(`한국어 후처리 중단: ${err.message}`);}
+  if(!automatic)setStatus(`${postprocessCancel?'Перевод остановлен':'Перевод завершён'} · переведено: ${changed} · не обработано ${failed} (исходные данные сохранены)`);
+  else if(failed){console.warn('[Дела того дня] postprocessing skipped',failed,'items');setStatus(`Анализ завершён · не переведено на русский: ${failed} (исходный текст сохранён)`);}
+ }catch(err){if(!automatic)setStatus(`Перевод на русский прерван: ${err.message}`);}
  finally{postprocessBusy=false;postprocessCancel=false;if(postprocessMatches(m,origin))refresh();if(postprocessPending){postprocessPending=false;void runDisplayPostprocess({automatic:true});}}
 }
 function meta(create=true){
@@ -244,11 +244,11 @@ async function readWorldBook(name){
 async function scanNpcSources(){
  const c=S(),m=meta(),chatId=c.chatId;
  if(!m||working)return;
- working=true;setStatus('현재 캐릭터·채팅 월드 인포에서 NPC 검색 중…');render();
+ working=true;setStatus('Поиск NPC в книгах мира персонажа и чата…');render();
  try{
   const ch=c.characters?.[c.characterId]||c.characters?.[c.this_chid]||{};
   const data=ch.data||{},sources=[];
-  for(const [label,book] of [['캐릭터 내장 월드 인포',data.character_book||ch.character_book],['현재 채팅 내장 월드 인포',c.chatMetadata?.character_book]]){
+  for(const [label,book] of [['Встроенная книга мира персонажа',data.character_book||ch.character_book],['Встроенная книга мира текущего чата',c.chatMetadata?.character_book]]){
    if(book)sources.push({name:label,data:book});
   }
   const nameSources=[c.chatMetadata?.world_info,data.extensions?.world,ch.extensions?.world,data.extensions?.worlds,ch.extensions?.worlds];
@@ -257,50 +257,50 @@ async function scanNpcSources(){
   for(const name of [...new Set(names)]){
    try{sources.push({name,data:await readWorldBook(name)});}catch(e){failed.push(`${name}: ${e.message}`);}
   }
-  if(S().chatId!==chatId)return setStatus('채팅이 바뀌어 NPC 검색 결과를 폐기했습니다');
+  if(S().chatId!==chatId)return setStatus('Чат изменился: результаты поиска NPC отброшены');
   const result=discoverNpcProfilesDetailed(sources);
   npcCandidates=result.profiles;npcReviewEntries=result.reviewEntries;npcScanStats=result.stats;npcScanChatId=chatId;npcSearch='';npcPreviewId='';npcAiBatchOffset=0;
-  setStatus(!sources.length?'연결된 캐릭터북 또는 읽을 수 있는 월드 인포가 없습니다':`1차 NPC 후보 ${npcCandidates.length}명 · AI 보조 탐색 대상 ${npcReviewEntries.length}개 항목${failed.length?` · 읽지 못한 월드 인포 ${failed.length}개`:''}`);
-  if(failed.length)console.warn('[그날의 사정] NPC book read warnings:',failed);
- }catch(e){console.error('[그날의 사정] NPC discovery failed',e);setStatus(`NPC 검색 실패: ${e.message}`);}finally{working=false;render();}
+  setStatus(!sources.length?'Нет подключённой или доступной для чтения книги мира':`Первый поиск · кандидатов NPC: ${npcCandidates.length}  · Записей для поиска с ИИ: ${npcReviewEntries.length} записей${failed.length?` · не удалось прочитать книг мира: ${failed.length} `:''}`);
+  if(failed.length)console.warn('[Дела того дня] NPC book read warnings:',failed);
+ }catch(e){console.error('[Дела того дня] NPC discovery failed',e);setStatus(`Ошибка поиска NPC: ${e.message}`);}finally{working=false;render();}
 }
 /** Stage 2 never runs automatically: using the current analysis model may incur fees. */
 async function scanNpcWithAI(){
  const c=S(),chatId=c.chatId,m=meta();
  if(!m||working)return;
- if(npcScanChatId!==chatId)return setStatus('먼저 1차 월드 인포 검색을 실행해 주세요');
- if(!npcReviewEntries.length)return setStatus('추가 AI 보조 탐색 대상이 없습니다');
+ if(npcScanChatId!==chatId)return setStatus('Сначала выполните первый этап поиска по книге мира');
+ if(!npcReviewEntries.length)return setStatus('Дополнительный поиск с ИИ не требуется');
  const plan=makeNpcReviewBatches(npcReviewEntries,Number.MAX_SAFE_INTEGER);
  const start=npcAiBatchOffset;
  const currentBatches=plan.batches.slice(start,start+8);
- if(!currentBatches.length)return setStatus(start?'AI 보조 탐색을 모두 마쳤습니다':'AI가 분석할 유효한 월드 인포 항목이 없습니다');
+ if(!currentBatches.length)return setStatus(start?'Дополнительный поиск с ИИ завершён':'Нет подходящих записей книги мира для анализа ИИ');
  working=true;let added=0,rejected=0,errors=0,completed=0;
  try{
   for(let i=0;i<currentBatches.length;i++){
-   if(S().chatId!==chatId){setStatus('채팅이 바뀌어 AI 보조 탐색을 중단했습니다');return;}
+   if(S().chatId!==chatId){setStatus('Чат изменился: дополнительный поиск с ИИ остановлен');return;}
    const batch=currentBatches[i];
-   setStatus(`AI 보조 NPC 탐색 ${start+i+1}/${plan.totalBatches} · 추가 API 비용 발생 가능`);render();
+   setStatus(`Поиск NPC с ИИ ${start+i+1}/${plan.totalBatches} · возможны дополнительные расходы на API`);render();
    try{
     const answer=await analysisRequest(NPC_AI_SYSTEM,buildNpcReviewPrompt(batch),2400);
-    if(S().chatId!==chatId){setStatus('채팅이 바뀌어 AI 보조 탐색 결과를 폐기했습니다');return;}
+    if(S().chatId!==chatId){setStatus('Чат изменился: результаты поиска с ИИ отброшены');return;}
     const result=parseNpcAiSuggestions(answer,batch,npcCandidates);
     added+=result.profiles.length-npcCandidates.length;
     rejected+=result.rejected;
     npcCandidates=result.profiles;completed++;
-   }catch(e){errors++;console.warn('[그날의 사정] NPC AI 보조 탐색 항목 오류:',readableProfileError(e));}
+   }catch(e){errors++;console.warn('[Дела того дня] Ошибка поиска NPC с ИИ:',readableProfileError(e));}
   }
   if(npcScanChatId===chatId){
    npcAiBatchOffset=start+currentBatches.length;
-   const more=npcAiBatchOffset<plan.totalBatches?` · 남은 ${plan.totalBatches-npcAiBatchOffset}묶음 (버튼을 다시 누르면 계속)`:'';
-   setStatus(`NPC 총 ${npcCandidates.length}명 (AI 추가 ${added}명) · 검사 ${completed}/${currentBatches.length}묶음 · 근거 미확인 제외 ${rejected}건${errors?` · 오류 ${errors}묶음`:''}${more}`);
+   const more=npcAiBatchOffset<plan.totalBatches?` · осталось ${plan.totalBatches-npcAiBatchOffset} пакетов (нажмите ещё раз для продолжения)`:'';
+   setStatus(`Всего NPC: ${npcCandidates.length}  (добавлено ИИ: ${added}) · проверено ${completed}/${currentBatches.length} пакетов · исключено без подтверждения: ${rejected} ${errors?` · Ошибка ${errors} пакетов`:''}${more}`);
   }
  }finally{working=false;render();}
 }
 async function switchNpc(targetId){
- const m=meta(),t=npcTracking(m);if(working)return setStatus('분석 완료 후 추적 대상을 변경하세요');
- if(targetId!==MAIN_TARGET&&!t.targets[targetId])return setStatus('NPC를 찾을 수 없습니다. 다시 검색해 주세요');
+ const m=meta(),t=npcTracking(m);if(working)return setStatus('Дождитесь окончания анализа, прежде чем менять отслеживаемого персонажа');
+ if(targetId!==MAIN_TARGET&&!t.targets[targetId])return setStatus('NPC не найден. Повторите поиск');
  clearProposalOnTargetChange(m,targetId);t.mode=targetId===MAIN_TARGET?'single':'multi';
- await persist();refresh();setStatus(targetId===MAIN_TARGET?'단일 캐릭터 추적으로 전환 완료':`CHAR 추적 대상: ${t.targets[targetId].name}`);
+ await persist();refresh();setStatus(targetId===MAIN_TARGET?'Включено отслеживание одного персонажа':`CHAR Отслеживаемый персонаж: ${t.targets[targetId].name}`);
 }
 function renderNpcTarget(){
  const m=meta(false);if(!m)return '';
@@ -310,23 +310,23 @@ function renderNpcTarget(){
  // Preserve existing saved target IDs; collapse duplicate discovery hits only in the selector.
  const options=mergeNpcCandidates(registered,candidateOptions);
  const preview=options.find(x=>x.id===npcPreviewId)||null;
- return `<section class="abop-frame abop-npc"><header>◇ CHAR · 추적 대상 <small>USER 페르소나는 유지</small></header>
- <p class="abop-muted">다인·세계관 봇에서는 {{char}}가 서술자일 수 있습니다. NPC를 직접 지정하면 해당 인물의 설정과 사건만 CHAR로 관리합니다.</p>
- <div class="abop-actions"><button type="button" data-action="singleNpc" ${t.mode==='single'?'disabled':''}>일반 캐릭터</button><button type="button" data-action="multiNpc" ${t.mode==='multi'?'disabled':''}>다인 봇</button></div>
- ${t.mode==='multi'?`<div class="abop-npc-controls"><p class="abop-muted">현재 대상: <b>${html(active?.name||'선택되지 않음')}</b> ${active?`· ${html(active.source||'')}`:''}</p>
- <div class="abop-actions"><button type="button" data-action="scanNPCs" ${working?'disabled':''}>1차 · NPC 찾기</button><button type="button" data-action="scanNPCsAI" ${working||npcScanChatId!==S().chatId||!npcReviewEntries.length?'disabled':''}>2차 · AI 보조 탐색</button></div>
- <p class="abop-muted">${npcScanChatId===S().chatId?`NPC 후보 ${npcCandidates.length}명 · 검토 가능 항목 ${npcReviewEntries.length}개 / 전체 ${npcScanStats?.entryCount||0}개`:'검색 전'} · AI 보조 탐색은 수동 실행이며 추가 API 비용이 발생할 수 있습니다. AI 후보는 원문 근거를 확인한 후 선택하세요.</p>
- <label class="abop-fieldlabel">이름 검색<input type="search" id="abop-npc-search" data-npc-search value="${html(npcSearch)}" placeholder="이름 또는 월드 인포 이름" /></label>
- <label class="abop-fieldlabel">검색/저장된 인물<select id="abop-npc-select"><option value="">NPC 선택…</option>${options.map(x=>`<option value="${html(x.id)}" ${(npcPreviewId||active?.id)===x.id?'selected':''}>${html(x.name)} · ${html(x.source||'직접 추가')}${x.sources?.length>1?` (+${x.sources.length-1}개 출처)`:''}${t.targets[x.id]?' · 저장됨':x.needsReview?' · AI 후보(확인 필요)':''}</option>`).join('')}</select></label>
- ${preview?`<details class="abop-advanced"><summary>선택한 후보 정보 확인${preview.needsReview?' · AI 보조 후보':''}</summary><p class="abop-muted">원본: ${html((preview.sources?.length?preview.sources:[preview.source]).join(' / '))} · 선택하기 전 내용 확인 가능</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow-y:auto">${html(String(preview.card||'').slice(0,2200))}</pre></details>`:''}
- <div class="abop-actions"><button type="button" class="abop-primary" data-action="selectNpc">이 NPC 추적</button></div>
- <details><summary>＋ NPC 직접 추가</summary><label class="abop-fieldlabel">이름<input id="abop-npc-name" maxlength="100" placeholder="캐릭터 이름" /></label>
- <label class="abop-fieldlabel">다른 이름·호칭 (쉼표로 구분)<input id="abop-npc-aliases" placeholder="영문명, 별명" /></label>
- <label class="abop-fieldlabel">프로필 설명 (선택)<textarea id="abop-npc-description" rows="6" placeholder="월드 인포에 없거나 직접 수정하고 싶은 설정을 입력하세요"></textarea></label>
- <button type="button" data-action="addNpc">NPC 추가하고 추적</button></details></div>`:''}
- <p class="abop-muted">현재 채팅의 메타데이터에 NPC별 설정·분석 기록을 저장합니다. 월드 인포 원본은 수정하지 않습니다. 한 번에 선택한 NPC 1명만 추적하며, 여러 상대의 임신·관계 사건을 합산하는 기능은 아직 지원하지 않습니다.</p></section>`;
+ return `<section class="abop-frame abop-npc"><header>◇ CHAR · Отслеживаемый персонаж <small>Персона USER сохраняется</small></header>
+ <p class="abop-muted">В ботах с несколькими персонажами {{char}} может быть рассказчиком. Выберите NPC, чтобы CHAR обозначал только его настройки и события.</p>
+ <div class="abop-actions"><button type="button" data-action="singleNpc" ${t.mode==='single'?'disabled':''}>Один персонаж</button><button type="button" data-action="multiNpc" ${t.mode==='multi'?'disabled':''}>Несколько персонажей</button></div>
+ ${t.mode==='multi'?`<div class="abop-npc-controls"><p class="abop-muted">Текущий персонаж: <b>${html(active?.name||'Не выбран')}</b> ${active?`· ${html(active.source||'')}`:''}</p>
+ <div class="abop-actions"><button type="button" data-action="scanNPCs" ${working?'disabled':''}>1. Найти NPC</button><button type="button" data-action="scanNPCsAI" ${working||npcScanChatId!==S().chatId||!npcReviewEntries.length?'disabled':''}>2. Дополнить поиск с ИИ</button></div>
+ <p class="abop-muted">${npcScanChatId===S().chatId?`Кандидатов NPC: ${npcCandidates.length} · доступно записей: ${npcReviewEntries.length} / всего ${npcScanStats?.entryCount||0} `:'Поиск ещё не выполнен'} · Поиск с ИИ запускается вручную и может повлечь расходы на API. Проверьте исходные данные, прежде чем выбирать кандидатов ИИ.</p>
+ <label class="abop-fieldlabel">Поиск по имени<input type="search" id="abop-npc-search" data-npc-search value="${html(npcSearch)}" placeholder="Имя или название книги мира" /></label>
+ <label class="abop-fieldlabel">Найденные и сохранённые персонажи<select id="abop-npc-select"><option value="">Выберите NPC…</option>${options.map(x=>`<option value="${html(x.id)}" ${(npcPreviewId||active?.id)===x.id?'selected':''}>${html(x.name)} · ${html(x.source||'Добавлено вручную')}${x.sources?.length>1?` (+${x.sources.length-1} источников)`:''}${t.targets[x.id]?' · Сохранено':x.needsReview?' · кандидат ИИ (нужна проверка)':''}</option>`).join('')}</select></label>
+ ${preview?`<details class="abop-advanced"><summary>Сведения о выбранном кандидате${preview.needsReview?' · Кандидат ИИ':''}</summary><p class="abop-muted">Источник: ${html((preview.sources?.length?preview.sources:[preview.source]).join(' / '))} · проверьте содержимое перед выбором</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow-y:auto">${html(String(preview.card||'').slice(0,2200))}</pre></details>`:''}
+ <div class="abop-actions"><button type="button" class="abop-primary" data-action="selectNpc">Отслеживать этого NPC</button></div>
+ <details><summary>＋ Добавить NPC вручную</summary><label class="abop-fieldlabel">Имя<input id="abop-npc-name" maxlength="100" placeholder="Имя персонажа" /></label>
+ <label class="abop-fieldlabel">Другие имена и обращения (через запятую)<input id="abop-npc-aliases" placeholder="Имя на английском, прозвище" /></label>
+ <label class="abop-fieldlabel">Описание профиля (необязательно)<textarea id="abop-npc-description" rows="6" placeholder="Введите сведения, которых нет в книге мира, или свои исправления"></textarea></label>
+ <button type="button" data-action="addNpc">Добавить NPC и отслеживать</button></details></div>`:''}
+ <p class="abop-muted">Настройки и результаты анализа каждого NPC сохраняются в метаданных чата. Книга мира сохраняется без изменений. Одновременно отслеживается один NPC; объединение беременности и отношений с несколькими партнёрами пока не поддерживается.</p></section>`;
 }
-async function persist(){try{if(typeof S().saveMetadata!=='function')throw new Error('SillyTavern 메타데이터 저장 기능이 없습니다');await S().saveMetadata();return true;}catch(e){console.warn('[그날의 사정] Metadata saving failed',e);setStatus('저장 실패: 개발자 콘솔 확인');return false;}}
+async function persist(){try{if(typeof S().saveMetadata!=='function')throw new Error('SillyTavern Функция сохранения метаданных недоступна');await S().saveMetadata();return true;}catch(e){console.warn('[Дела того дня] Metadata saving failed',e);setStatus('Ошибка сохранения: проверьте консоль разработчика');return false;}}
 function readCanon(){
  const c=S(), character=c.characters?.[c.characterId]||c.characters?.[c.this_chid]||{};
  const cd=character.data||{};
@@ -350,7 +350,7 @@ function syncCanon(){
   m.initialProposal=null;
  }
  if(result.changed){
-  setStatus(`USER 페르소나 동기화: ${live.user.name}`);
+  setStatus(`USER Синхронизация персоны: ${live.user.name}`);
   log('Active persona changed:',live.user.name);
  }
  if(result.updated || charUpdated){
@@ -378,7 +378,7 @@ function updatePrompt(){
   const m=meta(false);
   const body=state&&m?.config?.enabled&&m?.config?.injectState&&currentNpcReady(m)?formatPrompt(state,false):'';
   c.setExtensionPrompt(PROMPT,body,0,0,false,0);
- }catch(e){console.warn('[그날의 사정] prompt injection unavailable',e);}
+ }catch(e){console.warn('[Дела того дня] prompt injection unavailable',e);}
 }
 function refresh(){meta();syncCanon();state=branchState();updatePrompt();render();}
 function eventIDFor(messageKey,i){return `${messageKey}/e${i}`;}
@@ -393,22 +393,22 @@ function sourceForCurrent(){
 async function analyzeLatest({force=false}={}){
  if(working)return;
  let analyzeSucceeded=false;
- const m=meta();syncCanon();const src=sourceForCurrent();if(!m||!src)return setStatus('분석할 CHAR 메시지가 없습니다');
- if(!m.config.enabled)return setStatus('확장이 비활성화됨');
+ const m=meta();syncCanon();const src=sourceForCurrent();if(!m||!src)return setStatus('Нет сообщений для анализа: CHAR сообщений нет');
+ if(!m.config.enabled)return setStatus('Расширение отключено');
  if(!force&&!m.config.autoAnalyze)return;
- if(!currentNpcReady(m))return setStatus('먼저 CHAR 추적 NPC를 선택하세요');
+ if(!currentNpcReady(m))return setStatus('Сначала выберите NPC для отслеживания CHAR');
  const originTarget=selectedNpcId(m), ledger=currentCharLedger(m);
  if(ledger[src.key]?.analyzed&&ledger[src.key]?.personaId===m.userPersonaIdentity&&!force)return;
  const originChat=S().chatId, originKey=src.key, originPersona=m.userPersonaIdentity;
  const c=S();
- working=true;setStatus('별도 모델로 사건 분석 중…');render();
+ working=true;setStatus('Анализ событий отдельной моделью……');render();
  try{
   const last=branchState();
   const ec=effectiveCanon(m);
   const prompt=buildAnalyzerUserPrompt({charName:ec.char.name,charAliases:ec.char.aliases||[],multiNpc:originTarget!==MAIN_TARGET,userName:ec.user.name,charCard:ec.char.card,userPersona:ec.user.card,userText:src.userText,assistantText:src.assistantText,existingState:last?{clockHours:last.clockHours,people:Object.fromEntries(Object.entries(last.people).map(([k,p])=>[k,{name:p.name,sex:p.sex,secondary:p.secondary,phase:p.cycle.phase,pregnancy:p.pregnancy.status}]))}:null});
   const reply=await analysisRequest(ANALYZER_SYSTEM,prompt,2200);
   syncCanon();
-  if(S().chatId!==originChat||m.userPersonaIdentity!==originPersona||selectedNpcId(m)!==originTarget||!sourceForCurrent()||sourceForCurrent().key!==originKey){setStatus('채팅/페르소나/응답 변경으로 분석 결과 폐기');return;}
+  if(S().chatId!==originChat||m.userPersonaIdentity!==originPersona||selectedNpcId(m)!==originTarget||!sourceForCurrent()||sourceForCurrent().key!==originKey){setStatus('Результаты отброшены: изменился чат, персона или ответ');return;}
   const events=parseModelOutput(reply,src.userText,src.assistantText).map((e,i)=>({...e,id:eventIDFor(originKey,i),sceneId:e.sceneId||originKey,...(e.kind==='bond'?{allowMultipleAtCreation:m.config.asymmetricBond===true}:{})}));
   // A newly analyzed CHAR response without a scene snapshot must not leave a stale
   // earlier posture/activity visible as the current scene.
@@ -422,7 +422,7 @@ async function analyzeLatest({force=false}={}){
    });
   }
   const existing=ledger[originKey]||{};
-  if(existing.personaId&&existing.personaId!==originPersona){setStatus('이 응답은 이전 USER 페르소나의 기록입니다. 새 응답에서 다시 분석하세요.');return;}
+  if(existing.personaId&&existing.personaId!==originPersona){setStatus('Этот ответ относится к прежней USER персоне. Повторите анализ на новом ответе.');return;}
   if(originTarget===MAIN_TARGET){
    ledger[originKey]={analyzed:true,events:[...events,...(existing.manual||[])],manual:existing.manual||[],personaId:originPersona,at:Date.now()};
   }else{
@@ -437,8 +437,8 @@ async function analyzeLatest({force=false}={}){
     m.ledger[originKey]={...common,events:[...oldEvents,...additional],personaId:originPersona,at:Date.now()};
    }
   }
-  if(!await persist())throw new Error('분석 결과 저장 실패');setStatus(`분석 완료 · 확인된 사건 ${events.length}건`);refresh();analyzeSucceeded=true;
- }catch(e){console.error('[그날의 사정] generation error',e);setStatus(`분석 실패: ${e.message||'모델/API 연결 확인'}`);}finally{working=false;render();if(analyzeSucceeded)void runDisplayPostprocess({automatic:true});}
+  if(!await persist())throw new Error('Не удалось сохранить результаты анализа');setStatus(`Анализ завершён · подтверждённых событий: ${events.length} `);refresh();analyzeSucceeded=true;
+ }catch(e){console.error('[Дела того дня] generation error',e);setStatus(`Ошибка анализа: ${e.message||'Проверьте модель и подключение API'}`);}finally{working=false;render();if(analyzeSucceeded)void runDisplayPostprocess({automatic:true});}
 }
 /** An opt-in, never-auto-applied, chronological historical scan.
  * All model responses remain in memory until an explicit preview confirmation. */
@@ -449,22 +449,22 @@ function matchingHistoryExists(ledger,npcLedger,multi,item){
 async function previewHistoryState(){
  if(working)return;
  const m=meta();syncCanon();
- if(!m?.config?.enabled)return setStatus('확장을 활성화한 뒤 재분석할 수 있습니다');
- if(!currentNpcReady(m))return setStatus('먼저 CHAR 추적 NPC를 선택하세요');
+ if(!m?.config?.enabled)return setStatus('Включите расширение для повторного анализа');
+ if(!currentNpcReady(m))return setStatus('Сначала выберите NPC для отслеживания CHAR');
  const c=S(),target=selectedNpcId(m),personaId=m.userPersonaIdentity;
  const chat=c.chat||[],sources=collectHistorySources(chat);
- if(!sources.length)return setStatus('재분석할 기존 대화 메시지가 없습니다');
- if(!window.confirm(`기존 메시지 ${sources.length}개를 순서대로 AI에 전송해 재분석합니다. 분석 요청마다 API 비용이 발생할 수 있습니다. 기존 기록은 이 단계에서 변경하지 않습니다. 시작할까요?`))return;
+ if(!sources.length)return setStatus('В истории нет сообщений для повторного анализа');
+ if(!window.confirm(`Отправить ${sources.length} сообщений истории в ИИ по порядку для повторного анализа? Каждый запрос может повлечь расходы на API. На этом этапе записи не меняются.`))return;
  const chatId=c.chatId,fingerprint=historySnapshot(chat),canonFingerprint=JSON.stringify(effectiveCanon(m)),bondMode=m.config.asymmetricBond===true;
  const existingShared=structuredClone(m.ledger||{}),existingNpc=structuredClone(target===MAIN_TARGET?{}:currentCharLedger(m));
  let results={};
  historyStatePreview=null;historyScanCancelled=false;
- working=true;setStatus(`과거 기록 재분석 중 · 0/${sources.length}개`);render();
+ working=true;setStatus(`Повторный анализ истории · 0/${sources.length} `);render();
  try{
   const ec=effectiveCanon(m),multi=target!==MAIN_TARGET;
   for(let i=0;i<sources.length;i++){
-   if(historyScanCancelled)throw new Error('사용자가 분석을 취소했습니다');
-   if(S().chatId!==chatId||historySnapshot(S().chat||[])!==fingerprint||meta(false)!==m||m.userPersonaIdentity!==personaId||selectedNpcId(m)!==target||JSON.stringify(effectiveCanon(m))!==canonFingerprint)throw new Error('채팅·메시지·페르소나·추적 대상이 변경되어 분석을 중단했습니다');
+   if(historyScanCancelled)throw new Error('Анализ отменён пользователем');
+   if(S().chatId!==chatId||historySnapshot(S().chat||[])!==fingerprint||meta(false)!==m||m.userPersonaIdentity!==personaId||selectedNpcId(m)!==target||JSON.stringify(effectiveCanon(m))!==canonFingerprint)throw new Error('Анализ остановлен: изменился чат, сообщения, персона или выбранный персонаж');
    const src=sources[i];
    try{
     // Do not feed future messages into the historical state context.
@@ -483,7 +483,7 @@ async function previewHistoryState(){
     // An invalid JSON reply is a failed scan, not a confirmed zero-event message.
     const envelope=String(raw||'').trim().replace(/^```(?:json)?\s*/i,'').replace(/```\s*$/,'');
     const decoded=JSON.parse(envelope.slice(envelope.indexOf('{'),envelope.lastIndexOf('}')+1));
-    if(!Array.isArray(decoded?.events))throw new Error('모델이 events 배열을 반환하지 않았습니다');
+    if(!Array.isArray(decoded?.events))throw new Error('Модель не вернула массив events');
     const events=parseModelOutput(raw,src.userText,src.assistantText).map(e=>{
      if(src.userKey&&e.evidence&&src.userText.includes(e.evidence)&&(e.person==='user'||e.kind==='time_advance'||!src.assistantText.includes(e.evidence)))
       return {...e,__sourceKey:src.userKey,__sourceIndex:src.userIndex};
@@ -492,24 +492,24 @@ async function previewHistoryState(){
     results[src.key]={events,capped:decoded.events.length>=12};
    }catch(err){
     results[src.key]={error:String(err?.message||err).slice(0,200)};
-    console.warn('[그날의 사정] Historical message analysis failed',src.index+1,err);
+    console.warn('[Дела того дня] Historical message analysis failed',src.index+1,err);
    }
-   setStatus(`과거 기록 재분석 중 · ${i+1}/${sources.length}개 · 취소 가능`);
+   setStatus(`Повторный анализ истории · ${i+1}/${sources.length} · можно отменить`);
    if(i%3===2||i===sources.length-1)render();
   }
-  if(historyScanCancelled)throw new Error('사용자가 분석을 취소했습니다');
-  if(S().chatId!==chatId||historySnapshot(S().chat||[])!==fingerprint||meta(false)!==m||m.userPersonaIdentity!==personaId||selectedNpcId(m)!==target||JSON.stringify(effectiveCanon(m))!==canonFingerprint)throw new Error('채팅·페르소나·추적 대상이 변경돼 분석 결과를 폐기했습니다');
+  if(historyScanCancelled)throw new Error('Анализ отменён пользователем');
+  if(S().chatId!==chatId||historySnapshot(S().chat||[])!==fingerprint||meta(false)!==m||m.userPersonaIdentity!==personaId||selectedNpcId(m)!==target||JSON.stringify(effectiveCanon(m))!==canonFingerprint)throw new Error('Результаты отброшены: изменился чат, персона или выбранный персонаж');
   const reviewed=buildHistoryCandidates(sources,results,existingShared,existingNpc,target!==MAIN_TARGET,personaId);
   historyStatePreview={chatId,fingerprint,canonFingerprint,bondMode,personaId,target,reviewed,total:sources.length,capped:Object.values(results).filter(r=>r.capped).length,createdAt:new Date().toISOString()};
-  setStatus(`재분석 완료 · 신규 후보 ${reviewed.pending.length}건 / 기존 중복 ${reviewed.duplicates.length}건 / 실패 ${reviewed.errors.length}개 · 적용 전 검토`);
- }catch(err){historyStatePreview=null;setStatus(`재분석 결과 미적용: ${err.message}`);}
+  setStatus(`Анализ завершён · новых кандидатов: ${reviewed.pending.length} / повторов: ${reviewed.duplicates.length} / ошибок: ${reviewed.errors.length} · проверьте перед применением`);
+ }catch(err){historyStatePreview=null;setStatus(`Результаты повторного анализа не применены: ${err.message}`);}
  finally{working=false;historyScanCancelled=false;render();}
 }
 async function initialProfileAnalyze(){
  const m=meta();syncCanon();if(!m||working)return;
- if(!currentNpcReady(m))return setStatus('먼저 CHAR 추적 NPC를 선택하세요');
+ if(!currentNpcReady(m))return setStatus('Сначала выберите NPC для отслеживания CHAR');
  const targetId=selectedNpcId(m);
- working=true;tab='setup';setStatus('CHAR·USER 프로필 제안 생성 중…');render();
+ working=true;tab='setup';setStatus('CHAR·USER Подготовка предложений для профиля…');render();
  const chatId=S().chatId, originalPersona=m.userPersonaIdentity;
  try{
   const setupInput=buildProfileSetupInput(effectiveCanon(m),effectiveOverrides(m));
@@ -522,19 +522,19 @@ async function initialProfileAnalyze(){
   }catch(firstError){
    // Only malformed model output gets a format retry; API failures must retain their actual cause.
    if(!(firstError instanceof SetupJsonFormatError))throw firstError;
-   setStatus('초기 분석 응답 형식 오류 · 간결한 JSON으로 1회 재시도 중…');render();
-   const brief='FORMAT RETRY: Preserve the same role fields, confirmed/latent evidence rules and candidate counts. Output a COMPLETE valid JSON object only; no markdown or trailing prose. Write values, reasons and candidate labels in natural Korean, keep machine IDs and enums in English. Keep each reason under 65 Korean characters. Omit unsupported fields rather than adding filler.\n'+PROFILE_SYSTEM;
+   setStatus('Неверный формат начального анализа · повтор с кратким JSON (одна попытка)…');render();
+   const brief='FORMAT RETRY: Preserve the same role fields, confirmed/latent evidence rules and candidate counts. Output a COMPLETE valid JSON object only; no markdown or trailing prose. Write values, reasons and candidate labels in natural Russian, keep machine IDs and enums in English. Keep each reason under 65 Russian characters. Omit unsupported fields rather than adding filler.\n'+PROFILE_SYSTEM;
    try{
     const retry=await analysisRequest(brief,setupInput,setupMax);
     draft=normalizeSetupProposal(retry,chatId);
     completeInitialIdentityProposal(draft,{canon:effectiveCanon(m),overrides:effectiveOverrides(m),seed:`${m.seed}:${targetId}:${originalPersona}`});
    }catch(secondError){
-    if(secondError instanceof SetupJsonFormatError)throw new Error(`초기 분석 JSON이 2회 연속 불완전합니다. 실제 모델 출력 한도와 분석 연결을 확인하세요. (재시도: ${secondError.message})`,{cause:secondError});
+    if(secondError instanceof SetupJsonFormatError)throw new Error(`Начальный анализ дважды вернул неполный результат. Проверьте лимит вывода модели и подключение. (Повтор: ${secondError.message})`,{cause:secondError});
     throw secondError;
    }
   }
   syncCanon();
-  if(S().chatId!==chatId||m.userPersonaIdentity!==originalPersona||selectedNpcId(m)!==targetId){setStatus('채팅/페르소나 변경으로 분석 결과 폐기');return;}
+  if(S().chatId!==chatId||m.userPersonaIdentity!==originalPersona||selectedNpcId(m)!==targetId){setStatus('Результаты отброшены: изменился чат или персона');return;}
   // AI secondary choice is preserved; compatible anatomy is assigned from the permitted pool.
   draft.personaIdentity=originalPersona;draft.targetId=targetId;
   // Models can be wrong. Explicit manual settings always start unchecked/locked.
@@ -543,76 +543,76 @@ async function initialProfileAnalyze(){
    for(const field of draft.roles[role].fields)if(Object.hasOwn(locked,field.key))field.checked=false;
   }
   m.initialProposal=draft;await persist();
-  setStatus('제안 생성 완료 · 선택 후 적용해야 반영됩니다');refresh();
- }catch(e){console.error('[그날의 사정] initial proposal failed',e);setStatus(`초기 프로필 제안 실패: ${readableProfileError(e)}`);}
+  setStatus('Предложения готовы · отметьте нужные и примените');refresh();
+ }catch(e){console.error('[Дела того дня] initial proposal failed',e);setStatus(`Не удалось подготовить предложения для профиля: ${readableProfileError(e)}`);}
  finally{working=false;render();}
 }
 const PROPOSAL_SELECT={
- sex:[['male','남성'],['female','여성'],['nonbinary','기타']],
- secondary:[['alpha','알파'],['beta','베타'],['omega','오메가']],
+ sex:[['male','Мужской'],['female','Женский'],['nonbinary','Другое']],
+ secondary:[['alpha','Альфа'],['beta','Бета'],['omega','Омега']],
 };
-const LEVELS=[['latent','잠재적 관심'],['liked','선호'],['strongly_liked','강한 선호'],['disliked','비선호'],['restricted','경계']];
+const LEVELS=[['latent','Возможный интерес'],['liked','Нравится'],['strongly_liked','Очень нравится'],['disliked','Не нравится'],['restricted','Граница']];
 const choiceHTML=(arr,chosen)=>arr.map(([v,label])=>`<option value="${html(v)}" ${String(chosen)===String(v)?'selected':''}>${html(label)}</option>`).join('');
 function renderSetup(){
  const m=meta(false);if(!m)return '';
  const draft=m.initialProposal;
- const hint='<p class="abop-muted">카드·페르소나의 확정 정보와 성격 기반 제안을 구분합니다. 체크한 항목만 실제 프로필에 적용됩니다. 수동으로 이미 고정한 항목은 보호됩니다.</p>';
+ const hint='<p class="abop-muted">Факты из карточки и персоны отделены от предположений по характеру. В профиль попадут только отмеченные пункты. Закреплённые вручную значения защищены.</p>';
  const owns=effectiveOverrides(m),roleReset=['char','user'].map(r=>{
   const list=Object.keys(owns?.[r]||{}).filter(k=>RESETTABLE_FIELDS.includes(k));
-  return `<div class="abop-reset-row"><b>${r.toUpperCase()} · 수동 고정 ${list.length}개</b><div class="abop-actions"><select id="abop-clear-field-${r}" aria-label="${r} 고정 해제할 항목"><option value="">고정 항목 선택</option>${list.map(k=>`<option value="${html(k)}">${html(({sex:'성별',secondary:'알파·베타·오메가',anatomy:'신체 유형',menstruationEnabled:'월경 여부',cycleEnabled:'히트·러트',cycleMode:'히트·러트 모드',baseCondition:'기초 컨디션',basePheromone:'기초 페로몬'})[k]||k)}</option>`).join('')}</select><button data-action="clearFixedField" data-role="${r}" ${list.length?'':'disabled'}>선택 고정 해제</button><button data-action="resetInitialProfile" data-role="${r}">프로필 초기화</button></div></div>`;
+  return `<div class="abop-reset-row"><b>${r.toUpperCase()} · Закреплено вручную ${list.length} </b><div class="abop-actions"><select id="abop-clear-field-${r}" aria-label="${r} Поле для открепления"><option value="">Выберите закреплённое поле</option>${list.map(k=>`<option value="${html(k)}">${html(({sex:'Пол',secondary:'Альфа · Бета · Омега',anatomy:'Тип тела',menstruationEnabled:'Наличие менструации',cycleEnabled:'Течка / гон',cycleMode:'Режим течки / гона',baseCondition:'Базовое самочувствие',basePheromone:'Базовые феромоны'})[k]||k)}</option>`).join('')}</select><button data-action="clearFixedField" data-role="${r}" ${list.length?'':'disabled'}>Открепить выбранное</button><button data-action="resetInitialProfile" data-role="${r}">Сбросить профиль</button></div></div>`;
  }).join('');
- const resetBlock=`<section class="abop-frame"><header>◇ 프로필 초기화 · 현재 채팅</header><p class="abop-muted">항목 고정 해제 또는 초기 셋업만 다시 시작합니다. RP 채팅·분석 사건·주기 사건 기록은 삭제하지 않습니다. 전체 초기화는 CHAR 및 현재 USER 페르소나의 설정을 대상으로 합니다.</p>${roleReset}<div class="abop-actions"><button data-action="resetInitialProfile" data-role="both">CHAR + USER 프로필 함께 초기화</button></div></section>`;
- if(!draft||draft.chatId!==S().chatId||draft.personaIdentity!==m.userPersonaIdentity||draft.targetId!==selectedNpcId(m))return `<section class="abop-frame"><header>◇ 초기 프로필 설정</header><h3 class="abop-title">초기 프로필 통합 분석</h3>${hint}<p>신체 구조·생식 능력·페로몬·접촉·발성·언어와 친밀 취향을 한 번에 분석해 제안합니다. 카드와 수동 설정에 없는 제2성별은 성격·취향을 분석해 제안하고, 성기 형태는 해당 유형의 후보군에서 배정합니다. 기존 상태는 선택해 적용하기 전에는 변경되지 않습니다.</p><button data-action="init">CHAR + USER 분석 제안 만들기</button></section>${resetBlock}`;
+ const resetBlock=`<section class="abop-frame"><header>◇ Сброс профиля · текущий чат</header><p class="abop-muted">Открепляет поля или перезапускает начальную настройку. История RP, события анализа и циклов сохраняются. Полный сброс затрагивает CHAR и текущую персону USER.</p>${roleReset}<div class="abop-actions"><button data-action="resetInitialProfile" data-role="both">Сбросить CHAR + USER</button></div></section>`;
+ if(!draft||draft.chatId!==S().chatId||draft.personaIdentity!==m.userPersonaIdentity||draft.targetId!==selectedNpcId(m))return `<section class="abop-frame"><header>◇ Начальная настройка профиля</header><h3 class="abop-title">Комплексный анализ профиля</h3>${hint}<p>Предлагает анатомию, репродуктивные возможности, феромоны, особенности прикосновений, голоса, речи и близости. Если вторичный пол не задан в карточке или вручную, он предлагается по характеру и предпочтениям; анатомия выбирается из совместимых вариантов. Изменения вступят в силу только после выбора и применения.</p><button data-action="init">Создать предложения для CHAR + USER</button></section>${resetBlock}`;
  const missingABO=missingInitialSecondaryRoles(draft,{canon:effectiveCanon(m),overrides:effectiveOverrides(m)});
- if(missingABO.length)return `<section class="abop-frame"><header>◇ 초기 프로필 제안 <small>갱신 필요</small></header>${hint}<p>저장된 이전 분석 초안에 ${missingABO.map(x=>x.toUpperCase()).join(' · ')} 제2성별이 누락되어 있어 적용을 차단했습니다. 다시 분석하면 성격·취향 기반 ABO 제안과 해당 유형의 생식·주기 기본값이 함께 표시됩니다.</p><button data-action="init" class="abop-primary">CHAR + USER 다시 분석</button></section>${resetBlock}`;
- let out=`<section class="abop-frame"><header>◇ 초기 프로필 제안 <small>미적용 초안</small></header>${hint}
- <div class="abop-actions"><button data-action="init">다시 분석</button><button data-action="discardProposal">제안 버리기</button></div></section>`;
+ if(missingABO.length)return `<section class="abop-frame"><header>◇ Предложения для начального профиля <small>Требуется обновление</small></header>${hint}<p>В прежнем черновике отсутствует ${missingABO.map(x=>x.toUpperCase()).join(' · ')} вторичный пол. Применение заблокировано. Повторный анализ предложит ABO и соответствующие настройки репродукции и цикла.</p><button data-action="init" class="abop-primary">Повторить анализ CHAR + USER</button></section>${resetBlock}`;
+ let out=`<section class="abop-frame"><header>◇ Предложения для начального профиля <small>Неприменённый черновик</small></header>${hint}
+ <div class="abop-actions"><button data-action="init">Повторить анализ</button><button data-action="discardProposal">Отбросить предложения</button></div></section>`;
  for(const role of ['char','user']){
   const d=draft.roles[role],own=effectiveOverrides(m)?.[role]||{};
   out+=`<section class="abop-frame"><header>◇ ${role.toUpperCase()} · ${html(effectiveCanon(m)[role]?.name||'')}</header>
-  <p class="abop-muted">왼쪽 체크 = 적용 여부 · 제안 내용을 자유롭게 수정할 수 있습니다.</p><div class="abop-proposal-fields">`;
+  <p class="abop-muted">Галочка слева = применить поле · значения можно редактировать.</p><div class="abop-proposal-fields">`;
   for(const [i,f] of d.fields.entries()){
    const disabled=Object.hasOwn(own,f.key),checked=f.checked&&!disabled;
    const inferredSex=own.sex||d.fields.find(x=>x.key==='sex')?.value||state?.people[role]?.sex||'unknown';
    const inferredABO=own.secondary||d.fields.find(x=>x.key==='secondary')?.value||state?.people[role]?.secondary||'unknown';
    const choices=f.key==='anatomy'?anatomyChoices(inferredSex,inferredABO):PROPOSAL_SELECT[f.key];
-   const options=choices&&choices.some(([v])=>v===f.value)?choices:choices?[...choices,[f.value,'제안값: '+f.value]]:null;
-   const edit=typeof f.value==='boolean'?`<select data-proposal-value="${role}" data-i="${i}">${choiceHTML([['true','있음'],['false','없음']],f.value)}</select>`:
+   const options=choices&&choices.some(([v])=>v===f.value)?choices:choices?[...choices,[f.value,'Предложено: '+f.value]]:null;
+   const edit=typeof f.value==='boolean'?`<select data-proposal-value="${role}" data-i="${i}">${choiceHTML([['true','Да'],['false','Нет']],f.value)}</select>`:
     typeof f.value==='number'?`<input type="number" min="0" max="100" step="1" data-proposal-value="${role}" data-i="${i}" value="${fmt(f.value)}" />`:
     options?`<select data-proposal-value="${role}" data-i="${i}">${choiceHTML(options,f.value)}</select>`:
     `<input type="text" data-proposal-value="${role}" data-i="${i}" value="${html(f.value)}" />`;
-   out+=`<div class="abop-proposal-row"><label class="abop-check abop-proposal-check"><input type="checkbox" data-proposal-check="${role}" data-i="${i}" ${checked?'checked':''} ${disabled?'disabled':''}/><span class="abop-sr-only">${html(f.label)} 적용</span></label>
-    <div class="abop-proposal-content"><div class="abop-rowhead"><b>${html(f.label)}</b><span class="abop-basis ${f.basis}">${f.basis==='explicit'?'카드 명시':f.source==='arbitrary'?'후보군 배정':f.source==='abo_default'?'ABO 규칙 제안':'성격·취향 분석 제안'}</span>${disabled?'<span class="abop-basis">수동 고정</span>':''}</div>${edit}<small>${html(f.reason||'카드·페르소나 분석')}</small></div></div>`;
+   out+=`<div class="abop-proposal-row"><label class="abop-check abop-proposal-check"><input type="checkbox" data-proposal-check="${role}" data-i="${i}" ${checked?'checked':''} ${disabled?'disabled':''}/><span class="abop-sr-only">${html(f.label)} Применить</span></label>
+    <div class="abop-proposal-content"><div class="abop-rowhead"><b>${html(f.label)}</b><span class="abop-basis ${f.basis}">${f.basis==='explicit'?'Указано в карточке':f.source==='arbitrary'?'Выбрано из вариантов':f.source==='abo_default'?'По правилам ABO':'По характеру и предпочтениям'}</span>${disabled?'<span class="abop-basis">Закреплено вручную</span>':''}</div>${edit}<small>${html(f.reason||'Анализ карточки и персоны')}</small></div></div>`;
   }
-  out+=`</div><h3 class="abop-setup-subtitle">친밀 성향·취향 후보 <span>잠재 후보 3~5개 · 확정 후보 별도</span></h3>`;
+  out+=`</div><h3 class="abop-setup-subtitle">Близость и возможные предпочтения <span>3–5 возможных интересов · подтверждённые отдельно</span></h3>`;
   for(const [kind,list] of [['confirmed',d.confirmed],['latent',d.latent]]){
    for(const [i,pref] of list.entries()){
-    out+=`<div class="abop-proposal-row"><label class="abop-check abop-proposal-check"><input type="checkbox" data-pref-check="${role}" data-kind="${kind}" data-i="${i}" ${pref.checked?'checked':''}/><span class="abop-sr-only">${html(preferenceDisplayLabel(pref,m.preferenceTranslations||{}))} 적용</span></label>
-     <div class="abop-proposal-content"><div class="abop-rowhead"><b>${kind==='confirmed'?'카드 확정':pref.source==='optional'?'선택 후보':'잠재 취향'}</b><span class="abop-basis ${kind==='confirmed'?'explicit':'suggested'}">${kind==='confirmed'?'확정 제안':pref.source==='optional'?'선택 후보':pref.source==='custom'?'직접 추가':'잠재 제안'}</span></div>
-     <input data-pref-id="${role}" data-kind="${kind}" data-i="${i}" type="text" value="${html(preferenceDisplayLabel(pref,m.preferenceTranslations||{}))}" title="원본 ID: ${html(pref.id)}" aria-label="취향 이름" />
+    out+=`<div class="abop-proposal-row"><label class="abop-check abop-proposal-check"><input type="checkbox" data-pref-check="${role}" data-kind="${kind}" data-i="${i}" ${pref.checked?'checked':''}/><span class="abop-sr-only">${html(preferenceDisplayLabel(pref,m.preferenceTranslations||{}))} Применить</span></label>
+     <div class="abop-proposal-content"><div class="abop-rowhead"><b>${kind==='confirmed'?'Подтверждено карточкой':pref.source==='optional'?'Вариант на выбор':'Возможное предпочтение'}</b><span class="abop-basis ${kind==='confirmed'?'explicit':'suggested'}">${kind==='confirmed'?'Подтверждённое предпочтение':pref.source==='optional'?'Вариант на выбор':pref.source==='custom'?'Добавлено вручную':'Предполагаемое предпочтение'}</span></div>
+     <input data-pref-id="${role}" data-kind="${kind}" data-i="${i}" type="text" value="${html(preferenceDisplayLabel(pref,m.preferenceTranslations||{}))}" title="Исходный ID: ${html(pref.id)}" aria-label="Название предпочтения" />
      ${kind==='confirmed'?`<select data-pref-level="${role}" data-i="${i}">${choiceHTML(LEVELS.filter(x=>x[0]!=='latent'),pref.level)}</select>`:''}
-     <small>${html(pref.reason||'캐릭터의 성격·설정 기반 제안')}</small></div></div>`;
+     <small>${html(pref.reason||'Предложение по характеру и описанию персонажа')}</small></div></div>`;
    }
   }
-  out+=`<div class="abop-pref-add"><label>후보 직접 추가<input id="abop-newpref-${role}" type="text" placeholder="예: 애프터케어, 역할극, 노출 플레이" maxlength="80" /></label><button data-action="addPref" data-role="${role}" type="button">+ 후보 추가</button></div><p class="abop-muted">선택을 돕기 위해 제공되는 일반 후보입니다. 체크 시에만 적용됩니다.</p>`;
-  out+=`<div class="abop-rowhead abop-attitude"><label class="abop-check"><input type="checkbox" data-pref-attitude-check="${role}" ${d.useAttitude?'checked':''}/> 성향 적용</label>
-   <select data-pref-attitude="${role}">${choiceHTML([['open','열려 있음'],['reserved','소극적임'],['curious','호기심만 있음']],d.attitude)}</select></div></section>`;
+  out+=`<div class="abop-pref-add"><label>Добавить свой вариант<input id="abop-newpref-${role}" type="text" placeholder="Например: забота после близости, ролевая игра, эксгибиционизм" maxlength="80" /></label><button data-action="addPref" data-role="${role}" type="button">+ Добавить вариант</button></div><p class="abop-muted">Это общие варианты для выбора. Применяются только отмеченные.</p>`;
+  out+=`<div class="abop-rowhead abop-attitude"><label class="abop-check"><input type="checkbox" data-pref-attitude-check="${role}" ${d.useAttitude?'checked':''}/> Применить отношение к близости</label>
+   <select data-pref-attitude="${role}">${choiceHTML([['open','Открытость'],['reserved','Сдержанность'],['curious','Только любопытство']],d.attitude)}</select></div></section>`;
  }
- return out+`<section class="abop-frame abop-applybar"><p class="abop-muted">적용 전까지 월드 인포, 임신 계산 및 RP에 영향을 주지 않습니다.</p><button data-action="applyProposal" class="abop-primary">✓ 선택한 제안 적용</button></section>${resetBlock}`;
+ return out+`<section class="abop-frame abop-applybar"><p class="abop-muted">До применения не влияет на книгу мира, расчёт беременности и RP.</p><button data-action="applyProposal" class="abop-primary">✓ Применить выбранные предложения</button></section>${resetBlock}`;
 }
 async function applyProfileProposal(){
  const m=meta(),draft=m?.initialProposal;
  syncCanon();
- if(!draft||draft.chatId!==S().chatId||draft.personaIdentity!==m.userPersonaIdentity||draft.targetId!==selectedNpcId(m))return setStatus('페르소나가 변경되어 이전 제안은 적용할 수 없습니다');
+ if(!draft||draft.chatId!==S().chatId||draft.personaIdentity!==m.userPersonaIdentity||draft.targetId!==selectedNpcId(m))return setStatus('Персона изменилась: прежние предложения применить нельзя');
  const missingABO=missingInitialSecondaryRoles(draft,{canon:effectiveCanon(m),overrides:effectiveOverrides(m)});
- if(missingABO.length)return setStatus(`${missingABO.join('·').toUpperCase()} 제2성별이 누락된 이전 분석 결과입니다. 다시 분석하세요.`);
+ if(missingABO.length)return setStatus(`${missingABO.join('·').toUpperCase()} В прежнем анализе отсутствует вторичный пол. Повторите анализ.`);
  // Physiological defaults are contingent on an applied, explicit, or manually
  // fixed ABO type. Never commit them against a hidden provisional STATUS roll.
  for(const role of ['char','user']){
   const rec=draft.roles?.[role],canon=effectiveCanon(m)?.[role]||{},own=effectiveOverrides(m)?.[role]||{};
   const approved=['alpha','beta','omega'].includes(own.secondary)||['alpha','beta','omega'].includes(canon.secondary)||rec?.fields?.some(f=>f.key==='secondary'&&f.checked);
   if(!approved&&rec?.fields?.some(f=>f.checked&&['anatomy','gestate','impregnate','menstruationEnabled','cycleEnabled'].includes(f.key))){
-   return setStatus(`${role.toUpperCase()} 제2성별을 먼저 체크해야 신체 유형·생식·주기 제안을 함께 적용할 수 있습니다.`);
+   return setStatus(`${role.toUpperCase()} Сначала отметьте вторичный пол, чтобы применить связанные предложения анатомии, репродукции и цикла.`);
   }
  }
  let applied=0;
@@ -632,43 +632,43 @@ async function applyProfileProposal(){
   }
  }
  m.profileInitialized=true;m.initialProposal=null;
- await persist();tab='status';refresh();setStatus(`선택한 제안 ${applied}개 적용 완료`);
+ await persist();tab='status';refresh();setStatus(`Выбранных предложений: ${applied} · применено`);
 }
 /** Do not present dormant interval timings as an active heat/rut cycle.
  * Non-ABO menstruation is a separate flag (e.g. female Beta). */
 function remainingLabel(hours){
- if(!Number.isFinite(hours))return '계산할 수 없음';
- const minutes=Math.max(0,Math.ceil(hours*60));if(minutes===0)return '지금';
+ if(!Number.isFinite(hours))return 'Невозможно рассчитать';
+ const minutes=Math.max(0,Math.ceil(hours*60));if(minutes===0)return 'Сейчас';
  const d=Math.floor(minutes/1440),h=Math.floor((minutes%1440)/60),min=minutes%60;
- return [d?`${d}일`:'',h?`${h}시간`:'',min?`${min}분`:''].filter(Boolean).join(' ')+' 남음';
+ return [d?`${d} дн.`:'',h?`${h} ч`:'',min?`${min} мин.`:''].filter(Boolean).join(' ')+' осталось';
 }
 function cycleOverview(p,clock,seed,hideTruth=false){
  const f=cycleForecast(p,clock,seed);const m=f.mode;
- const category=p.secondary==='omega'?'히트':p.secondary==='alpha'?'러트':'히트·러트';
- const fertility=`<p class="abop-muted">월경 추적: ${p.menstruation.enabled?'사용 중':'사용 안 함'} · 임신 능력: ${p.fertile.gestate?'있음':'없음'}</p>`;
- const label={enabled:'사용 중',disabled:'추적 비활성',absent:'주기 없음',unset:'미설정'}[m]||'미설정';
+ const category=p.secondary==='omega'?'Течка':p.secondary==='alpha'?'Гон':'Течка / гон';
+ const fertility=`<p class="abop-muted">Отслеживание менструации: ${p.menstruation.enabled?'Включено':'Отключено'} · Способность вынашивать: ${p.fertile.gestate?'Да':'Нет'}</p>`;
+ const label={enabled:'Включено',disabled:'Отслеживание отключено',absent:'Цикл отсутствует',unset:'Не задано'}[m]||'Не задано';
  const row=(name,h)=>`<div class="abop-line"><span>${name}</span> <b>${html(remainingLabel(h))}</b></div>`;
- let lines=`<p>현재 상태: <b>${f.paused?(hideTruth?'주기 일시 중단 (사유 숨김)':'임신·출산 관련 주기 중단'):m==='enabled'?cyclePhaseLabel(f.phase):label}</b></p>`;
+ let lines=`<p>Текущее состояние: <b>${f.paused?(hideTruth?'Цикл приостановлен (причина скрыта)':'Цикл приостановлен из-за беременности или родов'):m==='enabled'?cyclePhaseLabel(f.phase):label}</b></p>`;
  if(m==='enabled'&&!f.paused){
-  lines+=row('현재 단계 종료',f.currentEndHours);
-  lines+=row('다음 전조',f.nextProdromeHours);
-  lines+=row(`다음 ${category}`,f.nextActiveHours);
-  lines+=row(`${category} 종료 · 회복 시작`,f.nextRecoveryHours);
-  lines+=row('회복 완료 · 안정기 시작',f.nextQuietHours);
- }else if(m!=='enabled')lines+=`<p class="abop-muted">${label} — ${category}의 남은 시간을 계산하지 않습니다.</p>`;
- if(f.menstruationStatus==='active')lines+=`<p class="abop-menstruating"><b>● 월경 중</b>${p.menstruation.source==='opening'?' · 도입부 설정 반영':p.menstruation.source==='manual'?' · 직접 기록':''}</p>${row('현재 월경 종료',f.menstruationEndHours)}${row('다음 월경',f.nextMenstruationHours)}`;
- else if(f.menstruationStatus==='waiting')lines+=row('다음 월경',f.nextMenstruationHours);
- else if(f.menstruationStatus==='paused')lines+=hideTruth?'<p>월경: 일시 중단 (사유 숨김)</p>':'<p>월경: 임신·출산 관련 중단 (재개일 미확정)</p>';
- else if(f.menstruationStatus==='unknown')lines+='<p>다음 월경: 기준 시점 미확정</p>';
- else lines+='<p>다음 월경: 해당 없음</p>';
+  lines+=row('Конец текущей фазы',f.currentEndHours);
+  lines+=row('Следующие предвестники',f.nextProdromeHours);
+  lines+=row(`Следующая фаза: ${category}`,f.nextActiveHours);
+  lines+=row(`${category} завершится · начало восстановления`,f.nextRecoveryHours);
+  lines+=row('Восстановление завершится · начало покоя',f.nextQuietHours);
+ }else if(m!=='enabled')lines+=`<p class="abop-muted">${label} — ${category} — оставшееся время не рассчитывается.</p>`;
+ if(f.menstruationStatus==='active')lines+=`<p class="abop-menstruating"><b>● Менструация</b>${p.menstruation.source==='opening'?' · по вступлению':p.menstruation.source==='manual'?' · записано вручную':''}</p>${row('Конец текущей менструации',f.menstruationEndHours)}${row('Следующая менструация',f.nextMenstruationHours)}`;
+ else if(f.menstruationStatus==='waiting')lines+=row('Следующая менструация',f.nextMenstruationHours);
+ else if(f.menstruationStatus==='paused')lines+=hideTruth?'<p>Менструация: приостановлена (причина скрыта)</p>':'<p>Менструация: приостановлена из-за беременности или родов (дата возобновления неизвестна)</p>';
+ else if(f.menstruationStatus==='unknown')lines+='<p>Следующая менструация: исходная дата не определена</p>';
+ else lines+='<p>Следующая менструация: неприменимо</p>';
  lines+=fertility;
- if(m==='enabled')lines+=`<details><summary>주기 설정값</summary><p>간격: ${fmt(p.cycle.intervalHours/24)}일 · 전조: ${fmt(p.cycle.prodromeHours)}시간 · 활성: ${fmt(p.cycle.activeHours/24)}일 · 회복: ${fmt(p.cycle.recoveryHours)}시간</p></details>`;
+ if(m==='enabled')lines+=`<details><summary>Параметры цикла</summary><p>Интервал: ${fmt(p.cycle.intervalHours/24)} дн. · предвестники: ${fmt(p.cycle.prodromeHours)} ч · активная фаза: ${fmt(p.cycle.activeHours/24)} дн. · восстановление: ${fmt(p.cycle.recoveryHours)} ч</p></details>`;
  return lines;
 }
 function projectedHistoryStateHtml(m,selectedIds){
  try{
   const preview=historyStatePreview;
-  if(!preview||!state)return '<p class="abop-muted">예상 상태를 계산할 수 없습니다.</p>';
+  if(!preview||!state)return '<p class="abop-muted">Не удалось рассчитать ожидаемое состояние.</p>';
   const target=selectedNpcId(m),multi=target!==MAIN_TARGET;
   const shared=structuredClone(m.ledger||{}),npc=multi?structuredClone(currentCharLedger(m)):{};
   const selected=preview.reviewed.pending.filter(x=>selectedIds.has(`${x.key}#${x.ordinal}`));
@@ -678,159 +678,159 @@ function projectedHistoryStateHtml(m,selectedIds){
   const next=replay(m.seed,effectiveCanon(m),m.config||DEFAULT_CONFIG,rows,effectiveOverrides(m));
   const parts=Object.entries(state.people).map(([id,person])=>{
    const after=next.people[id];if(!after)return '';
-   return `${id.toUpperCase()} 컨디션 ${fmt(person.body.condition)} → ${fmt(after.body.condition)}, 페로몬 ${fmt(person.pheromone.emission)} → ${fmt(after.pheromone.emission)}`;
+   return `${id.toUpperCase()} Самочувствие ${fmt(person.body.condition)} → ${fmt(after.body.condition)}, Феромоны ${fmt(person.pheromone.emission)} → ${fmt(after.pheromone.emission)}`;
   });
-  return `<p class="abop-muted">선택한 신규 사건 ${count}건 적용 시 예상: 서사 시간 ${fmt(state.clockHours)} → ${fmt(next.clockHours)}시간</p><p class="abop-muted">${parts.map(html).join('<br>')}</p>`;
- }catch(e){return `<p class="abop-muted">예상 수치 계산 실패: ${html(e.message)}</p>`;}
+  return `<p class="abop-muted">Выбранных новых событий: ${count} · прогноз сюжетного времени: ${fmt(state.clockHours)} → ${fmt(next.clockHours)} ч</p><p class="abop-muted">${parts.map(html).join('<br>')}</p>`;
+ }catch(e){return `<p class="abop-muted">Ошибка расчёта ожидаемых показателей: ${html(e.message)}</p>`;}
 }
 function renderHistoryStatePreview(m){
  const saved=m.historyStateReviewInfo;
- const last=saved?`<p class="abop-muted">마지막 재분석 적용: ${html(saved.appliedAt||'알 수 없음')} · ${Number(saved.count)||0}건</p>`:'';
+ const last=saved?`<p class="abop-muted">Последний применённый повторный анализ: ${html(saved.appliedAt||'Неизвестно')} · ${Number(saved.count)||0} </p>`:'';
  const p=historyStatePreview;
  if(!p||p.chatId!==S().chatId||p.target!==selectedNpcId(m)||p.personaId!==m.userPersonaIdentity)return last;
  const {pending,duplicates,errors}=p.reviewed,hideTruth=m.config.hideTruth===true;
- const label=e=>`${e.person?`${personRoleLabel(e.person)} · `:''}${e.kind==='vital_observation'?'신체·페로몬 변화':eventKindLabel(e.kind)}${e.kind==='time_advance'&&Number.isFinite(e.hours)?` · +${fmt(e.hours)}시간`:''}`;
+ const label=e=>`${e.person?`${personRoleLabel(e.person)} · `:''}${e.kind==='vital_observation'?'Изменение тела и феромонов':eventKindLabel(e.kind)}${e.kind==='time_advance'&&Number.isFinite(e.hours)?` · +${fmt(e.hours)} ч`:''}`;
  const concealed=e=>hideTruth&&['exposure','pregnancy_reveal','pregnancy_end','delivery'].includes(e.kind);
- return `<section class="abop-frame"><header>기존 채팅 상태 재분석 · 미리보기</header>
- <p>검색한 메시지 ${p.total}개 · 신규 후보 ${pending.length}건 · 기존 기록 중복 ${duplicates.length}건 · 분석 실패 ${errors.length}개 · 이전 재분석 기록 ${countHistoryStateEvents(m.ledger,selectedNpcId(m)===MAIN_TARGET?{}:currentCharLedger(m))}건</p>
- ${p.capped?`<p class="abop-muted">일부 메시지 ${p.capped}개에서 분석기 출력 최대 12건에 도달했습니다. 모든 사건이 추출됐다고 보장할 수 없습니다.</p>`:''}
- <p class="abop-muted">기본값은 신규 후보만 선택됩니다. 시간 동기화·수동 기록·기존 사건은 삭제하거나 덮어쓰지 않습니다. 원문에 명시되지 않은 시간을 턴 수로 계산하지 않습니다.</p>
+ return `<section class="abop-frame"><header>Повторный анализ состояния в истории · предпросмотр</header>
+ <p>Просмотрено сообщений: ${p.total} · новых кандидатов: ${pending.length} · повторов записей: ${duplicates.length} · ошибок анализа: ${errors.length} · ранее добавленных событий: ${countHistoryStateEvents(m.ledger,selectedNpcId(m)===MAIN_TARGET?{}:currentCharLedger(m))} </p>
+ ${p.capped?`<p class="abop-muted">В сообщениях: ${p.capped} достигнут лимит в 12 событий. Часть событий могла остаться нераспознанной.</p>`:''}
+ <p class="abop-muted">По умолчанию выбраны только новые кандидаты. Синхронизация времени, ручные и прежние записи сохраняются. Время не выводится из количества ходов без прямых указаний в тексте.</p>
  <div id="abop-history-projection">${projectedHistoryStateHtml(m,new Set(pending.map(x=>`${x.key}#${x.ordinal}`)))}</div>
- ${pending.length?`<div class="abop-sync-results">${pending.map(item=>`<label class="abop-line"><input type="checkbox" data-history-state="${html(`${item.key}#${item.ordinal}`)}" checked> 메시지 ${item.index+1} · ${html(concealed(item.event)?'비공개 상태 사건':label(item.event))} — ${html(concealed(item.event)?'설정에 따라 근거 숨김':(item.event.evidence||'근거 없음').slice(0,220))}</label>`).join('')}</div>`:'<p>적용할 신규 후보가 없습니다.</p>'}
- ${duplicates.length?`<p class="abop-muted">이미 기록된 사건 ${duplicates.length}건은 중복 적용에서 제외했습니다.</p>`:''}
- ${errors.slice(0,12).map(x=>`<p class="abop-muted">분석 제외 · 메시지 ${x.index+1}: ${html(x.message)}</p>`).join('')}
- ${errors.length>12?`<p class="abop-muted">그 외 분석 실패 ${errors.length-12}개</p>`:''}
- <div class="abop-actions"><button data-action="applyHistoryState" ${pending.length?'':'disabled'}>선택한 사건만 적용</button><button data-action="cancelHistoryState">결과 폐기</button></div></section>${last}`;
+ ${pending.length?`<div class="abop-sync-results">${pending.map(item=>`<label class="abop-line"><input type="checkbox" data-history-state="${html(`${item.key}#${item.ordinal}`)}" checked> Сообщение ${item.index+1} · ${html(concealed(item.event)?'Событие со скрытым состоянием':label(item.event))} — ${html(concealed(item.event)?'основание скрыто по настройкам':(item.event.evidence||'Нет основания').slice(0,220))}</label>`).join('')}</div>`:'<p>Нет новых кандидатов для применения.</p>'}
+ ${duplicates.length?`<p class="abop-muted">Уже записанных событий: ${duplicates.length} · повторное применение исключено.</p>`:''}
+ ${errors.slice(0,12).map(x=>`<p class="abop-muted">Исключено из анализа · сообщение ${x.index+1}: ${html(x.message)}</p>`).join('')}
+ ${errors.length>12?`<p class="abop-muted">Других ошибок анализа: ${errors.length-12} </p>`:''}
+ <div class="abop-actions"><button data-action="applyHistoryState" ${pending.length?'':'disabled'}>Применить выбранные события</button><button data-action="cancelHistoryState">Отбросить результат</button></div></section>${last}`;
 }
 function renderTimeSyncPreview(m){
  const saved=m.timeSyncInfo;
- const note=saved?`<p class="abop-muted">마지막 적용: ${html(saved.appliedAt||'알 수 없음')} · ${Number(saved.count)||0}건</p>`:'';
+ const note=saved?`<p class="abop-muted">Последнее применение: ${html(saved.appliedAt||'Неизвестно')} · ${Number(saved.count)||0} </p>`:'';
  const p=timeSyncPreview;
  if(!p||p.chatId!==S().chatId)return note;
  const r=p.result,items=r.matches;
- return `<section class="abop-frame"><header>동기화 분석 미리보기</header>
- <p>확정 후보 ${items.length}건 · 시간 확인 필요 ${(r.uncertain||[]).length}건 / 검색 메시지 ${r.scanned}건 · 기존 동기화 기록 ${syncedHistoryEventCount(m.ledger)}건</p>
- <p class="abop-muted">아래 단서는 확정 사실이 아닌 문자열 기반 후보입니다. 대사·회상·중복 서술을 포함할 수 있습니다. 잘못된 항목이 있으면 체크를 해제하세요.</p>
- ${items.length?`<div class="abop-sync-results">${items.map((x,i)=>`<label class="abop-line"><input type="checkbox" data-sync-index="${i}" checked> 메시지 ${x.index+1} · ${html(x.speaker)} · ${html(x.kind==='time_advance'?`+${x.hours}시간`:`${personRoleLabel(x.person)} ${eventKindLabel(x.kind)}`)} — ${html(x.evidence)}</label>`).join('')}</div>`:'<p>확실한 시간 단서를 찾지 못했습니다. 기존 기록은 변경되지 않습니다.</p>'}
- ${(r.uncertain||[]).slice(0,25).map(x=>`<p class="abop-muted">시간 확인 필요 · 메시지 ${x.index+1}: ${html(x.evidence)} — ${html(x.reason)}</p>`).join('')}
- ${r.warnings.slice(0,15).map(w=>`<p class="abop-muted">주의: ${html(w)}</p>`).join('')}
- ${r.warnings.length>15?`<p class="abop-muted">추가 주의 ${r.warnings.length-15}건</p>`:''}
- <div class="abop-actions"><button data-action="applyTimeSync" ${items.length?'':'disabled'}>선택 항목 적용</button><button data-action="cancelTimeSync">취소</button></div>
- <p class="abop-muted">기존 수동/자동 사건은 유지합니다. 동일 시간의 기존 사건이 존재하면 중복 계산될 수 있으니 적용 전 확인하세요.</p></section>${note}`;
+ return `<section class="abop-frame"><header>Предпросмотр синхронизации</header>
+ <p>Кандидатов: ${items.length} · время требует проверки: ${(r.uncertain||[]).length} / просмотрено сообщений: ${r.scanned} · прежних записей синхронизации: ${syncedHistoryEventCount(m.ledger)} </p>
+ <p class="abop-muted">Ниже приведены кандидаты, найденные по текстовым шаблонам. Среди них могут быть реплики, воспоминания и повторы. Снимите отметки с неподходящих записей.</p>
+ ${items.length?`<div class="abop-sync-results">${items.map((x,i)=>`<label class="abop-line"><input type="checkbox" data-sync-index="${i}" checked> Сообщение ${x.index+1} · ${html(x.speaker)} · ${html(x.kind==='time_advance'?`+${x.hours} ч`:`${personRoleLabel(x.person)} ${eventKindLabel(x.kind)}`)} — ${html(x.evidence)}</label>`).join('')}</div>`:'<p>Однозначных указаний времени не найдено. Прежние записи сохраняются.</p>'}
+ ${(r.uncertain||[]).slice(0,25).map(x=>`<p class="abop-muted">Время требует проверки · сообщение ${x.index+1}: ${html(x.evidence)} — ${html(x.reason)}</p>`).join('')}
+ ${r.warnings.slice(0,15).map(w=>`<p class="abop-muted">Внимание: ${html(w)}</p>`).join('')}
+ ${r.warnings.length>15?`<p class="abop-muted">Дополнительных замечаний: ${r.warnings.length-15} </p>`:''}
+ <div class="abop-actions"><button data-action="applyTimeSync" ${items.length?'':'disabled'}>Применить выбранное</button><button data-action="cancelTimeSync">Отмена</button></div>
+ <p class="abop-muted">Ручные и автоматические события сохраняются. Проверьте время перед применением: уже записанные события могут привести к двойному учёту.</p></section>${note}`;
 }
 function sceneDetailRows(scene,role){
- const fields=[['자세','posture',scene.posture],['접촉','contact',scene.contact],['발성','vocal',scene.vocal],['대화·발화','speech',scene.speech]];
- if(Array.isArray(scene.play)&&scene.play.length)for(const raw of scene.play)fields.push(['기타 활동','play',raw]);
+ const fields=[['Поза','posture',scene.posture],['Контакт','contact',scene.contact],['Звуки и голос','vocal',scene.vocal],['Реплики','speech',scene.speech]];
+ if(Array.isArray(scene.play)&&scene.play.length)for(const raw of scene.play)fields.push(['Другие действия','play',raw]);
  return fields.filter(([,field,value])=>String(value??'').trim()).map(([name,field,value])=>`<div class="abop-line"><span class="abop-scene-key">${name}</span><span>${html(localizedScene('scene',role,field,value))}</span></div>`).join('');
 }
 // CHAR is the primary scene view. USER scenes are shown only when they have
 // independently supported current details or stored completed scenes.
 function renderSceneHistory(person,role){
  const recent=Array.isArray(person?.recentScenes)?person.recentScenes:[];
- return `<hr/><p class="abop-muted">완료된 장면: ${recent.length}건 (최근 최대 3건 보관)</p>${recent.length?`<details class="abop-scene-history"><summary>완료된 장면 기록 보기</summary>${recent.slice().reverse().map((scene,i)=>`<div class="abop-line"><small>${i+1}.</small> ${html(localizedSceneSummary(scene,role))}</div>`).join('')}</details>`:'<p class="abop-muted">완료된 장면 없음</p>'}`;
+ return `<hr/><p class="abop-muted">Завершённых сцен:: ${recent.length} (хранятся последние 3)</p>${recent.length?`<details class="abop-scene-history"><summary>Показать завершённые сцены</summary>${recent.slice().reverse().map((scene,i)=>`<div class="abop-line"><small>${i+1}.</small> ${html(localizedSceneSummary(scene,role))}</div>`).join('')}</details>`:'<p class="abop-muted">Нет завершённых сцен</p>'}`;
 }
 function renderCurrentScene(person,role){
- if(person?.scene?.verified===false)return '<p class="abop-muted">최신 서술에서 현재 장면이 확인되지 않았습니다.</p>';
- return hasUsableScene(person)?`<div class="abop-scene-details">${sceneDetailRows(person.scene,role)}</div>`:'<p class="abop-muted">확인된 자세·접촉 정보가 없습니다.</p>';
+ if(person?.scene?.verified===false)return '<p class="abop-muted">Последнее повествование не подтверждает текущую сцену.</p>';
+ return hasUsableScene(person)?`<div class="abop-scene-details">${sceneDetailRows(person.scene,role)}</div>`:'<p class="abop-muted">Нет подтверждённых данных о позе и контакте.</p>';
 }
 function renderSceneTab(people){
  const char=people.find(([id])=>id==='char')?.[1];
  const user=people.find(([id])=>id==='user')?.[1];
- const primary=char?`<section class="abop-frame abop-scene-primary"><header>CHAR · 현재 장면</header><div class="abop-title">${html(char.name)}</div>${renderCurrentScene(char,'char')}${renderSceneHistory(char,'char')}</section>`:'';
+ const primary=char?`<section class="abop-frame abop-scene-primary"><header>CHAR · Текущая сцена</header><div class="abop-title">${html(char.name)}</div>${renderCurrentScene(char,'char')}${renderSceneHistory(char,'char')}</section>`:'';
  // Avoid an equally-sized empty USER card. Do not invent USER scene evidence
  // from the assistant's narration; the event parser protects USER agency.
- const supplemental=user&&(hasUsableScene(user)||hasSceneHistory(user))?`<details class="abop-frame abop-scene-user"><summary>USER · ${html(user.name)} · 장면 기록 보기</summary>${hasUsableScene(user)?`<div class="abop-scene-details">${sceneDetailRows(user.scene,'user')}</div>`:''}${renderSceneHistory(user,'user')}</details>`:'';
+ const supplemental=user&&(hasUsableScene(user)||hasSceneHistory(user))?`<details class="abop-frame abop-scene-user"><summary>USER · ${html(user.name)} · Показать историю сцен</summary>${hasUsableScene(user)?`<div class="abop-scene-details">${sceneDetailRows(user.scene,'user')}</div>`:''}${renderSceneHistory(user,'user')}</details>`:'';
  return `<div class="abop-scenes-char-first">${primary}${supplemental}</div>`;
 }
 function selectedSection(){
- const m=meta(false);if(!state||!m)return `<p class="abop-muted">채팅을 연 뒤 사용할 수 있습니다.</p>`;
+ const m=meta(false);if(!state||!m)return `<p class="abop-muted">Откройте чат, чтобы пользоваться расширением.</p>`;
  const people=Object.entries(state.people);
- if(!currentNpcReady(m)&&tab!=='settings')return renderNpcTarget()+'<section class="abop-frame"><p class="abop-muted">다인 봇 모드에서는 추적할 NPC를 먼저 선택해 주세요. 선택하기 전에는 내레이터를 CHAR로 분석하지 않습니다.</p></section>';
+ if(!currentNpcReady(m)&&tab!=='settings')return renderNpcTarget()+'<section class="abop-frame"><p class="abop-muted">В режиме нескольких персонажей сначала выберите NPC. До выбора рассказчик не анализируется как CHAR.</p></section>';
  if(tab==='setup')return renderSetup();
  if(tab==='status')return `${renderNpcTarget()}<div class="abop-people">${people.map(([id,p])=>personCard(id,p,m)).join('')}</div>
-  <section class="abop-frame"><header>◈ 서사 시간 · 사건</header><p class="abop-meta">${Math.floor(state.clockHours/24)}일 차 · ${fmt(state.clockHours%24)}시간 / 기록 ${state.events.length}건</p>
-  <div class="abop-actions"><button data-action="registerBondNpc">각인 NPC 등록</button><button data-action="manualBond">각인 / 각인 상실 기록</button></div>
-  <div class="abop-actions"><button data-action="previewTimeSync" ${working?'disabled':''}>기존 채팅 시간 동기화</button></div>
-  <p class="abop-muted">수동 실행 · 숫자형/자연어 시간 경과 및 주기 시작 기록 검색 · 불명확한 시간은 적용 제외 · 적용 전 미리보기</p>
+  <section class="abop-frame"><header>◈ Сюжетное время и события</header><p class="abop-meta">${Math.floor(state.clockHours/24)} дн. · ${fmt(state.clockHours%24)} ч / записей: ${state.events.length} </p>
+  <div class="abop-actions"><button data-action="registerBondNpc">Добавить NPC для связи</button><button data-action="manualBond">Записать связь / утрату связи</button></div>
+  <div class="abop-actions"><button data-action="previewTimeSync" ${working?'disabled':''}>Синхронизировать время по истории</button></div>
+  <p class="abop-muted">Ручной запуск · поиск явного течения времени и начала циклов · неясное время исключается · предпросмотр перед применением</p>
   ${renderTimeSyncPreview(m)}
-  <div class="abop-actions"><button data-action="previewHistoryState" ${working?'disabled':''}>기존 채팅 상태 재분석</button>${working?'<button data-action="cancelHistoryScan">재분석 중단</button>':''}</div>
-  <p class="abop-muted">수동 실행 · 과거 메시지를 오래된 순서로 AI 분석(추가 API 비용 가능) · 중복 제거 · 승인 전에는 현재 상태에 적용하지 않음</p>
+  <div class="abop-actions"><button data-action="previewHistoryState" ${working?'disabled':''}>Повторно проанализировать историю</button>${working?'<button data-action="cancelHistoryScan">Остановить анализ</button>':''}</div>
+  <p class="abop-muted">Ручной запуск · ИИ анализирует историю от старых сообщений к новым (возможны расходы на API) · повторы исключаются · изменения после подтверждения</p>
   ${renderHistoryStatePreview(m)}
-  <div class="abop-actions"><input id="abop-hours" type="number" min="0" step="1" placeholder="진행 시간(h)" aria-label="진행 시간"/><button data-action="advance">시간 적용</button><button data-action="rebuild">다시 계산</button></div>
+  <div class="abop-actions"><input id="abop-hours" type="number" min="0" step="1" placeholder="Прошло времени(h)" aria-label="Прошло времени"/><button data-action="advance">Применить время</button><button data-action="rebuild">Пересчитать</button></div>
   ${state.alerts.slice(-3).map(x=>displayAlertKo(x,m.config.hideTruth===true)).filter(Boolean).map(x=>`<p class="abop-note">${html(x)}</p>`).join('')}
-  <details><summary>최근 사건</summary>${state.events.slice(-14).reverse().map(e=>`<div class="abop-line">${Math.floor(e.at/24)}일 차 · ${html(eventHiddenByPrivacy(e.kind,m.config)?'비공개 상태 사건':eventSummaryKo(e))}</div>`).join('')||'기록 없음'}</details></section>`;
- if(tab==='cycles')return `<div class="abop-people">${people.map(([id,p])=>`<section class="abop-frame"><header>${id.toUpperCase()} · ${p.cycle.enabled?'주기 현황':p.menstruation.enabled?'월경 현황 · 약물':`${cycleModeLabel(cycleMode(p))} · 약물`}</header><p class="abop-title">${html(p.name)}</p>${cycleOverview(p,state.clockHours,state.seed,m.config.hideTruth===true)}<div class="abop-actions"><button data-action="recordMenstruationStart" data-role="${id}" ${!p.menstruation.enabled?'disabled':''}>월경 시작 기록</button><button data-action="recordMenstruationEnd" data-role="${id}" ${cycleForecast(p,state.clockHours,state.seed).menstruationStatus!=='active'?'disabled':''}>월경 종료 기록</button></div><p class="abop-muted">실제로 이야기에서 확인된 시점에만 기록하세요. 도입부의 명시적 월경은 시작 상태로 자동 반영됩니다.</p>
- <details><summary>약물 · 부작용 · 내성</summary><p class="abop-muted">복용 ${p.medication.length}건 · 부작용 기록 ${p.adverse.length}건</p>
- ${(p.adverse||[]).slice(-4).map(x=>`<div class="abop-line">${html(drugLabel(x.drug))} · ${html((x.symptoms||[x.type||'기타']).map(adverseLabel).join(', '))}${Number.isFinite(x.until)&&x.until<state.clockHours?' (경과)':''}</div>`).join('')||'<p class="abop-muted">부작용 기록 없음</p>'}
- <p class="abop-muted">내성: ${html(Object.entries(p.tolerance||{}).map(([k,v])=>`${drugLabel(k)} ${v}`).join(' · ')||'기록 없음')}</p>
- <div class="abop-actions"><select id="abop-drug-${id}" aria-label="${id} 약물 종류">${[['oral_suppressant','경구 억제제'],['long_suppressant','장기 억제제'],['emergency_suppressant','응급 억제제'],['scent_blocker','페로몬 차단제'],['oral_contraceptive','일반 피임약'],['emergency_contraceptive','응급 피임약'],['symptom_inducer','증상 유도제'],['cycle_inducer','주기 유도제'],['unlicensed_mixture','비승인 혼합약물']].map(([v,label])=>`<option value="${v}">${label}</option>`).join('')}</select>
- <select id="abop-drug-mode-${id}" aria-label="${id} 사용 방식"><option value="normal">정상 사용</option><option value="misuse">오남용</option><option value="unlicensed">비승인 사용</option></select>
- <button data-action="recordMedication" data-role="${id}">확인된 복용 기록</button></div>
- <p class="abop-muted">실제로 복용한 것으로 확인된 사건만 기록하세요. 자동 분석에서 이미 기록한 복용은 중복 입력하지 마세요. 발생 확률과 증상은 가상의 세계관 규칙에 따라 결정됩니다.</p></details></section>`).join('')}</div>`;
- if(tab==='fertility')return `${m.config.pregnancyEnabled===false?'<section class="abop-frame"><header>임신 기능 OFF</header><p>임신 판정 및 RP 주입이 비활성화되어 있습니다. 기록은 삭제되지 않으며 다시 켜면 기존 사건도 재계산됩니다.</p></section>':''}<div class="abop-people">${people.map(([id,p])=>`<section class="abop-frame"><header>${id.toUpperCase()} · 실제 신체 상태</header><div class="abop-title">${html(p.name)}</div><p>임신 상태: <b>${m.config.hideTruth?'●●●● (스포일러 숨김)':html(pregnancyLabel(p.pregnancy.status))}</b></p><p>인지 상태: ${html(pregnancyLabel(p.awareness.pregnancy))}</p><p>출산 예정: ${p.pregnancy.dueAt===null?'—':`${Math.floor(p.pregnancy.dueAt/24)}일 차 · ${fmt(p.pregnancy.dueAt%24)}시간`}</p><p>결합: ${html((p.bondPartners||[]).map(pid=>state.people[pid]?.name||pid).join(', ')||'없음')}</p></section>`).join('')}</div><section class="abop-frame"><header>◈ 가임·임신 가능성 기록</header>${Object.values(state.windows).map(w=>`<div class="abop-line">${html(state.people[w.gestator]?.name||personRoleLabel(w.gestator))} · 노출 ${w.exposures.length}건 · 누적 ${(w.total*100).toFixed(1)}% · ${m.config.hideTruth?'결과 숨김':`고정 난수 ${w.roll.toFixed(4)}`}</div>`).join('')||'<p>판정 기록 없음</p>'}<button data-action="exposure" ${m.config.pregnancyEnabled===false?'disabled title="임신 기능이 꺼져 있습니다"':''}>임신 가능 사건 수동 기록</button></section>`;
- if(tab==='preferences')return `<section class="abop-frame"><div class="abop-actions"><button data-action="translatePreferences" ${working?'disabled':''}>AI로 한국어 표시명 정리</button></div><p class="abop-muted">알 수 없는 영어 코드와 어색한 한국어 표현을 한 번에 정리합니다. 별도 AI 호출이 발생하며 추가 API 비용이 들 수 있습니다. </p><p class="abop-muted">[경계]: 해당 인물이 조심스럽게 접근하거나 경계를 두는 요소. 금지나 비선호와는 별도 분류입니다.</p></section><div class="abop-people">${people.map(([id,p])=>`<section class="abop-frame"><header>${id.toUpperCase()} · 취향</header><div class="abop-title">${html(p.name)}</div><p class="abop-muted">성향: ${html(attitudeLabel(p.preferences.attitude))}</p><h4 class="abop-minihead">확정·관찰된 취향</h4>${p.preferences.confirmed.map(x=>`<div class="abop-line">${html(localizedPreference(x,m,id))} <small>[${html(preferenceLevelLabel(x.level))}]</small></div>`).join('')||'<p class="abop-muted">기록 없음</p>'}<h4 class="abop-minihead">잠재적 관심 및 후보</h4>${p.preferences.latent.map(x=>`<div class="abop-line">${html(localizedPreference(x,m,id))} <small>[${html(preferenceLevelLabel(x.level))}]</small></div>`).join('')||'<p class="abop-muted">후보 없음</p>'}</section>`).join('')}</div>`;
+  <details><summary>Последние события</summary>${state.events.slice(-14).reverse().map(e=>`<div class="abop-line">${Math.floor(e.at/24)} дн. · ${html(eventHiddenByPrivacy(e.kind,m.config)?'Событие со скрытым состоянием':eventSummaryKo(e))}</div>`).join('')||'Нет записей'}</details></section>`;
+ if(tab==='cycles')return `<div class="abop-people">${people.map(([id,p])=>`<section class="abop-frame"><header>${id.toUpperCase()} · ${p.cycle.enabled?'Состояние цикла':p.menstruation.enabled?'Менструация и препараты':`${cycleModeLabel(cycleMode(p))} · Препараты`}</header><p class="abop-title">${html(p.name)}</p>${cycleOverview(p,state.clockHours,state.seed,m.config.hideTruth===true)}<div class="abop-actions"><button data-action="recordMenstruationStart" data-role="${id}" ${!p.menstruation.enabled?'disabled':''}>Записать начало менструации</button><button data-action="recordMenstruationEnd" data-role="${id}" ${cycleForecast(p,state.clockHours,state.seed).menstruationStatus!=='active'?'disabled':''}>Записать конец менструации</button></div><p class="abop-muted">Записывайте только подтверждённые в сюжете события. Явное указание менструации во вступлении автоматически учитывается в начальном состоянии.</p>
+ <details><summary>Препараты · побочные эффекты · толерантность</summary><p class="abop-muted">Приём ${p.medication.length} · записей побочных эффектов: ${p.adverse.length} </p>
+ ${(p.adverse||[]).slice(-4).map(x=>`<div class="abop-line">${html(drugLabel(x.drug))} · ${html((x.symptoms||[x.type||'Другое']).map(adverseLabel).join(', '))}${Number.isFinite(x.until)&&x.until<state.clockHours?' (прошло)':''}</div>`).join('')||'<p class="abop-muted">Нет записей побочных эффектов</p>'}
+ <p class="abop-muted">Толерантность: ${html(Object.entries(p.tolerance||{}).map(([k,v])=>`${drugLabel(k)} ${v}`).join(' · ')||'Нет записей')}</p>
+ <div class="abop-actions"><select id="abop-drug-${id}" aria-label="${id} Тип препарата">${[['oral_suppressant','Пероральный подавитель'],['long_suppressant','Подавитель длительного действия'],['emergency_suppressant','Экстренный подавитель'],['scent_blocker','Блокатор феромонов'],['oral_contraceptive','Обычный контрацептив'],['emergency_contraceptive','Экстренный контрацептив'],['symptom_inducer','Индуктор симптомов'],['cycle_inducer','Индуктор цикла'],['unlicensed_mixture','Неодобренная смесь']].map(([v,label])=>`<option value="${v}">${label}</option>`).join('')}</select>
+ <select id="abop-drug-mode-${id}" aria-label="${id} Способ применения"><option value="normal">Обычное применение</option><option value="misuse">Неправильное применение</option><option value="unlicensed">Неодобренное применение</option></select>
+ <button data-action="recordMedication" data-role="${id}">Записать подтверждённый приём</button></div>
+ <p class="abop-muted">Записывайте только подтверждённый приём. Не дублируйте записи автоматического анализа. Вероятности и симптомы определяются вымышленными правилами мира.</p></details></section>`).join('')}</div>`;
+ if(tab==='fertility')return `${m.config.pregnancyEnabled===false?'<section class="abop-frame"><header>Симуляция беременности OFF</header><p>Расчёт беременности и передача состояния в RP отключены. Записи сохраняются и пересчитываются после включения.</p></section>':''}<div class="abop-people">${people.map(([id,p])=>`<section class="abop-frame"><header>${id.toUpperCase()} · Фактическое состояние тела</header><div class="abop-title">${html(p.name)}</div><p>Беременность: <b>${m.config.hideTruth?'●●●● (спойлер скрыт)':html(pregnancyLabel(p.pregnancy.status))}</b></p><p>Осведомлённость: ${html(pregnancyLabel(p.awareness.pregnancy))}</p><p>Ожидаемые роды: ${p.pregnancy.dueAt===null?'—':`${Math.floor(p.pregnancy.dueAt/24)} дн. · ${fmt(p.pregnancy.dueAt%24)} ч`}</p><p>Связь: ${html((p.bondPartners||[]).map(pid=>state.people[pid]?.name||pid).join(', ')||'Нет')}</p></section>`).join('')}</div><section class="abop-frame"><header>◈ История фертильности и вероятности беременности</header>${Object.values(state.windows).map(w=>`<div class="abop-line">${html(state.people[w.gestator]?.name||personRoleLabel(w.gestator))} · Эпизодов ${w.exposures.length} · суммарно ${(w.total*100).toFixed(1)}% · ${m.config.hideTruth?'Результат скрыт':`Фиксированное случайное число ${w.roll.toFixed(4)}`}</div>`).join('')||'<p>Нет записей расчёта</p>'}<button data-action="exposure" ${m.config.pregnancyEnabled===false?'disabled title="Симуляция беременности отключена"':''}>Записать возможность зачатия вручную</button></section>`;
+ if(tab==='preferences')return `<section class="abop-frame"><div class="abop-actions"><button data-action="translatePreferences" ${working?'disabled':''}>Перевести подписи с помощью ИИ</button></div><p class="abop-muted">Переводит неизвестные английские коды и улучшает формулировки. Выполняется отдельный запрос к ИИ; возможны расходы на API. </p><p class="abop-muted">[Граница]: То, к чему персонаж относится осторожно или с ограничениями. Это отдельная категория от запрета и неприязни.</p></section><div class="abop-people">${people.map(([id,p])=>`<section class="abop-frame"><header>${id.toUpperCase()} · Предпочтения</header><div class="abop-title">${html(p.name)}</div><p class="abop-muted">Отношение: ${html(attitudeLabel(p.preferences.attitude))}</p><h4 class="abop-minihead">Подтверждённые и наблюдавшиеся предпочтения</h4>${p.preferences.confirmed.map(x=>`<div class="abop-line">${html(localizedPreference(x,m,id))} <small>[${html(preferenceLevelLabel(x.level))}]</small></div>`).join('')||'<p class="abop-muted">Нет записей</p>'}<h4 class="abop-minihead">Возможные интересы и варианты</h4>${p.preferences.latent.map(x=>`<div class="abop-line">${html(localizedPreference(x,m,id))} <small>[${html(preferenceLevelLabel(x.level))}]</small></div>`).join('')||'<p class="abop-muted">Нет вариантов</p>'}</section>`).join('')}</div>`;
  if(tab==='scenes')return renderSceneTab(people);
  const shared=sharedAnalysisSettings();
- return `<section class="abop-frame"><header>◈ 설정</header>
-  <div class="abop-title">디자인 설정</div>
-  <label class="abop-fieldlabel">색상 테마<select data-theme-choice>${choiceHTML([['auto','시스템 설정에 맞춤'],['light','라이트 · 밝은 테마'],['dark','다크 · 어두운 테마']],m.config.uiTheme||'auto')}</select></label>
-  <p class="abop-muted">화면 테마와 시뮬레이션 설정은 채팅별로 저장됩니다. 분석 연결·토큰 값은 모든 채팅에서 공통으로 사용합니다.</p><hr/>
-  <div class="abop-title">분석 모델 연결</div>
-  <label class="abop-fieldlabel">분석에 사용할 API / 저장 연결 프로필
+ return `<section class="abop-frame"><header>◈ Настройки</header>
+  <div class="abop-title">Оформление</div>
+  <label class="abop-fieldlabel">Цветовая тема<select data-theme-choice>${choiceHTML([['auto','Как в системе'],['light','Светлая'],['dark','Тёмная']],m.config.uiTheme||'auto')}</select></label>
+  <p class="abop-muted">Тема и параметры симуляции сохраняются для каждого чата. Подключение анализа и лимит токенов общие для всех чатов.</p><hr/>
+  <div class="abop-title">Подключение модели анализа</div>
+  <label class="abop-fieldlabel">API / сохранённый профиль для анализа
   <select id="abop-connection" data-connection>${connectionOptions(shared)}</select></label>
-  <p class="abop-muted">선택하지 않으면 현재 SillyTavern 연결을 사용합니다. 연결 오류가 나면 SillyTavern에서 해당 공급자와 API 인증 정보를 먼저 확인하고 저장된 연결 프로필을 갱신하세요.</p>
+  <p class="abop-muted">По умолчанию используется текущее подключение SillyTavern. При ошибке проверьте провайдера и учётные данные API в SillyTavern, затем обновите сохранённый профиль.</p>
   ${connectionValue(shared)==='custom'?`<div class="abop-api-fields">
-    <label class="abop-fieldlabel">OpenAI 호환 API 주소<input type="url" data-custom="customApiUrl" value="${html(shared.customApiUrl||'')}" placeholder="https://api.example.com/v1" /></label>
-    <label class="abop-fieldlabel">모델 이름<input type="text" data-custom="customModel" value="${html(shared.customModel||'')}" placeholder="model-id" /></label>
-    <label class="abop-fieldlabel">API 키 (메모리에만 저장)<input type="password" data-secret placeholder="${sessionApiKey?'등록됨 · 바꾸려면 새 키 입력':'API 키 입력'}" autocomplete="off" /></label>
-    <p class="abop-muted">키는 채팅·설정·내보내기에 저장하지 않습니다. 새로고침하면 다시 입력해야 합니다. 직접 API 호출은 제공 업체의 브라우저 CORS 허용이 필요하며, 지원하지 않으면 저장된 연결 프로필을 사용하세요.</p>
-    <button data-action="clearKey">임시 API 키 지우기</button>
+    <label class="abop-fieldlabel">Адрес API, совместимого с OpenAI<input type="url" data-custom="customApiUrl" value="${html(shared.customApiUrl||'')}" placeholder="https://api.example.com/v1" /></label>
+    <label class="abop-fieldlabel">Название модели<input type="text" data-custom="customModel" value="${html(shared.customModel||'')}" placeholder="model-id" /></label>
+    <label class="abop-fieldlabel">Ключ API (только в памяти)<input type="password" data-secret placeholder="${sessionApiKey?'Указан · введите новый для замены':'Введите ключ API'}" autocomplete="off" /></label>
+    <p class="abop-muted">Ключ не сохраняется в чате, настройках и экспорте. После обновления страницы введите его снова. Прямые запросы требуют поддержки CORS провайдером. Если её нет, используйте сохранённый профиль.</p>
+    <button data-action="clearKey">Удалить временный ключ API</button>
   </div>`:''}
-  <label class="abop-fieldlabel">초기 셋업 최대 출력 토큰<input type="number" min="${MIN_SETUP_OUTPUT_TOKENS}" max="${MAX_SETUP_OUTPUT_TOKENS}" step="1" data-custom="setupMaxTokens" value="${html(normalizeSetupOutputTokens(shared.setupMaxTokens))}" /></label>
-  <p class="abop-muted">모델·제공업체의 실제 최대 출력 토큰은 다를 수 있습니다. 현재 연결 사용 시에는 SillyTavern의 현재 연결에 응답 길이 값을 전달합니다.</p>
-  <button data-action="refreshProfiles">프로필 목록 새로고침</button><button data-action="testConnection">분석 연결 테스트</button><p class="abop-muted">연결 프로필·직접 API 주소/모델·초기 분석 토큰 값은 전 채팅 공통으로 보존됩니다. API 키는 보안상 브라우저 메모리에만 유지되며 새로고침하면 사라집니다.</p>
-  <hr/><div class="abop-title">한국어 표시 후처리</div>
-  <label class="abop-fieldlabel">처리 방식<select data-postprocess="mode">${choiceHTML([['none','사용 안 함 (기존 화면 유지)'],['rules','기본 번역 사전만 사용 · AI 없음'],['auto','자동 · 필요한 표현만 AI로 번역'],['full','AI 번역 및 한국어 윤문']],postprocessSettings().mode)}</select></label>
-  <label class="abop-fieldlabel">후처리용 모델<select data-postprocess="connection">${postprocessConnectionOptions(postprocessSettings().connection)}</select></label>
-  <p class="abop-muted">저장 연결 프로필을 별도로 선택할 수 있습니다. 직접 API 연결은 기존 분석 연결을 재사용합니다. 자동 처리는 신규 분석이 끝난 뒤 필요한 표현에만 수행하며 API 비용이 발생할 수 있습니다.</p>
-  <div class="abop-title">후처리 적용 범위</div>
-  ${[['preference','취향'],['scene','현재 장면'],['history','완료된 장면'],['events','최근 사건 유형'],['status','상태 설명']].map(([key,label])=>`<label class="abop-check"><input type="checkbox" data-postprocess-scope="${key}" ${postprocessSettings().scopes.includes(key)?'checked':''}/> ${label}</label>`).join('')}
-  <div class="abop-actions"><button data-action="postprocessExisting" ${postprocessBusy?'disabled':''}>현재 채팅 기존 표시 한국어 정리</button><button data-action="resetPostprocessCache" ${postprocessBusy?'disabled':''}>번역 캐시 초기화</button>${postprocessBusy?'<button data-action="cancelPostprocess">후처리 중단</button>':''}</div>
-  <p class="abop-muted">기존 기록은 버튼으로 일괄 정리합니다. 번역 결과는 현재 채팅에 캐시하고 화면에만 적용합니다. 내부 ID·사건·상태 수치는 변경하지 않습니다. 실패 시 원래 표시가 유지됩니다.</p>
-  <hr/><label class="abop-check"><input type="checkbox" data-config="enabled" ${m.config.enabled?'checked':''}/> 확장 활성화</label><label class="abop-check"><input type="checkbox" data-config="autoAnalyze" ${m.config.autoAnalyze?'checked':''}/> 응답마다 별도 분석 호출 (추가 API 비용 발생 가능)</label><label class="abop-check"><input type="checkbox" data-config="injectState" ${m.config.injectState?'checked':''}/> 다음 RP에 내부 상태 주입</label><label class="abop-check"><input type="checkbox" data-config="hideTruth" ${m.config.hideTruth?'checked':''}/> 화면에서 임신 결과 숨기기 (모델 주입에는 유지)</label>
-  <label class="abop-check"><input type="checkbox" data-config="pregnancyEnabled" ${m.config.pregnancyEnabled!==false?'checked':''}/> 임신 시뮬레이션 ON/OFF (채팅별)</label>
-  <label class="abop-check"><input type="checkbox" data-config="asymmetricBond" ${m.config.asymmetricBond?'checked':''}/> 비대칭 각인 ON/OFF (OFF: 알파·오메가 상호 영향 / ON: 알파 복수 각인 허용, 오메가에게만 페로몬·분리 스트레스 적용)</label>
-  <p class="abop-muted">OFF: 새 임신 확률·진행·RP 주입을 계산하지 않습니다. 사건 기록은 유지하므로 다시 ON이면 기존 사건까지 결정적 난수로 재계산됩니다. 이미 진행 중인 채팅에서는 먼저 백업을 권장합니다.</p>
-  <hr/><div class="abop-title">월드 인포 약물 안내</div>
+  <label class="abop-fieldlabel">Лимит выходных токенов начального анализа<input type="number" min="${MIN_SETUP_OUTPUT_TOKENS}" max="${MAX_SETUP_OUTPUT_TOKENS}" step="1" data-custom="setupMaxTokens" value="${html(normalizeSetupOutputTokens(shared.setupMaxTokens))}" /></label>
+  <p class="abop-muted">Фактический лимит вывода зависит от модели и провайдера. При использовании текущего подключения в SillyTavern передаётся заданная длина ответа.</p>
+  <button data-action="refreshProfiles">Обновить список профилей</button><button data-action="testConnection">Проверить подключение анализа</button><p class="abop-muted">Профиль, адрес API, модель и лимит начального анализа общие для всех чатов. Ключ API хранится только в памяти браузера и удаляется при обновлении страницы.</p>
+  <hr/><div class="abop-title">Перевод отображаемого текста на русский</div>
+  <label class="abop-fieldlabel">Режим обработки<select data-postprocess="mode">${choiceHTML([['none','Отключено (сохранить текущий текст)'],['rules','Только встроенный словарь · без ИИ'],['auto','Автоматический перевод нужных выражений с ИИ'],['full','Перевод и редактирование с ИИ']],postprocessSettings().mode)}</select></label>
+  <label class="abop-fieldlabel">Модель для перевода<select data-postprocess="connection">${postprocessConnectionOptions(postprocessSettings().connection)}</select></label>
+  <p class="abop-muted">Можно выбрать отдельный сохранённый профиль. Прямое API использует подключение анализа. Автоперевод выполняется после анализа только для нужных выражений и может повлечь расходы на API.</p>
+  <div class="abop-title">Что переводить</div>
+  ${[['preference','Предпочтения'],['scene','Текущая сцена'],['history','Завершённые сцены'],['events','Типы последних событий'],['status','Описания состояния']].map(([key,label])=>`<label class="abop-check"><input type="checkbox" data-postprocess-scope="${key}" ${postprocessSettings().scopes.includes(key)?'checked':''}/> ${label}</label>`).join('')}
+  <div class="abop-actions"><button data-action="postprocessExisting" ${postprocessBusy?'disabled':''}>Перевести существующие записи чата</button><button data-action="resetPostprocessCache" ${postprocessBusy?'disabled':''}>Очистить кэш перевода</button>${postprocessBusy?'<button data-action="cancelPostprocess">Остановить перевод</button>':''}</div>
+  <p class="abop-muted">Кнопка переводит прежние записи пакетами. Перевод кэшируется в текущем чате и используется только на экране. Внутренние ID, события и числовые показатели сохраняются. При ошибке остаётся исходный текст.</p>
+  <hr/><label class="abop-check"><input type="checkbox" data-config="enabled" ${m.config.enabled?'checked':''}/> Включить расширение</label><label class="abop-check"><input type="checkbox" data-config="autoAnalyze" ${m.config.autoAnalyze?'checked':''}/> Отдельный анализ каждого ответа (возможны расходы на API)</label><label class="abop-check"><input type="checkbox" data-config="injectState" ${m.config.injectState?'checked':''}/> Передавать внутреннее состояние в следующий RP</label><label class="abop-check"><input type="checkbox" data-config="hideTruth" ${m.config.hideTruth?'checked':''}/> Скрывать результат беременности (модель продолжает его получать)</label>
+  <label class="abop-check"><input type="checkbox" data-config="pregnancyEnabled" ${m.config.pregnancyEnabled!==false?'checked':''}/> Включить симуляцию беременности (для текущего чата)</label>
+  <label class="abop-check"><input type="checkbox" data-config="asymmetricBond" ${m.config.asymmetricBond?'checked':''}/> Асимметричная связь (выкл.: взаимное влияние альфы и омеги; вкл.: альфа может иметь несколько связей, феромоны и стресс разлуки влияют только на омегу)</label>
+  <p class="abop-muted">При отключении вероятность беременности, её развитие и передача состояния в RP не рассчитываются. Записи сохраняются; после включения прежние события пересчитываются с теми же случайными числами. В текущем чате рекомендуется сначала создать резервную копию.</p>
+  <hr/><div class="abop-title">Препараты из книги мира</div>
   ${worldInfoDrugReferenceHtml()}
-  <hr/><div class="abop-title">기본 임신 확률 (%)</div>${Object.entries(m.config.rate).map(([k,v])=>`<label class="abop-number">${html(rateLabel(k))} <input type="number" min="0" max="100" step="1" data-rate="${k}" value="${fmt(v*100)}" /></label>`).join('')}<hr/><div class="abop-title">약물 시뮬레이션 확률 (%)</div>
-  <p class="abop-muted">세계관 설정용 가상 확률입니다. 현실 의학에서 사용하는 실제 약물의 효과·복용법을 의미하지 않습니다.</p>
-  ${[['oralContraceptiveEffectiveness','일반 피임약 유효 중 임신 위험 감소'],['emergencyContraceptiveReduction','72시간 이내 응급 피임 위험 감소'],['longSuppressantSuccess','장기 억제제 배란 억제 성공']].map(([key,label])=>`<label class="abop-number">${label} <input type="number" min="0" max="100" step="1" data-probability="${key}" value="${fmt((m.config[key]??DEFAULT_CONFIG[key])*100)}" /></label>`).join('')}
-  <label class="abop-number">전체 부작용 발생 확률 배율 (%) <input type="number" min="0" max="300" step="5" data-probability="sideEffectScale" value="${fmt((m.config.sideEffectScale??1)*100)}" /></label>
-  <p class="abop-muted">약물별 기본 부작용 확률: 경구 억제제 8% · 장기 억제제 12% · 응급 억제제 10% · 페로몬 차단제 4% · 일반 피임약 8% · 응급 피임약 10%. 배율은 개별 약물의 부작용 확률에만 적용됩니다.</p>
-  <hr/><button data-action="openSetup">초기 프로필 셋업 열기</button><button data-action="reanalyze">최근 응답 재분석</button><button data-action="export">채팅 데이터 내보내기</button><p class="abop-muted">수동 변경은 자동 판독보다 우선합니다. 선택된 응답에 속한 분석 사건만 적용됩니다.</p></section>`;
+  <hr/><div class="abop-title">Базовая вероятность беременности (%)</div>${Object.entries(m.config.rate).map(([k,v])=>`<label class="abop-number">${html(rateLabel(k))} <input type="number" min="0" max="100" step="1" data-rate="${k}" value="${fmt(v*100)}" /></label>`).join('')}<hr/><div class="abop-title">Вероятности действия препаратов (%)</div>
+  <p class="abop-muted">Вымышленные вероятности для игрового мира. Они не описывают действие и применение реальных препаратов.</p>
+  ${[['oralContraceptiveEffectiveness','Снижение риска при действии обычного контрацептива'],['emergencyContraceptiveReduction','72 ч: снижение риска от экстренной контрацепции'],['longSuppressantSuccess','Успешное подавление овуляции длительным подавителем']].map(([key,label])=>`<label class="abop-number">${label} <input type="number" min="0" max="100" step="1" data-probability="${key}" value="${fmt((m.config[key]??DEFAULT_CONFIG[key])*100)}" /></label>`).join('')}
+  <label class="abop-number">Множитель вероятности побочных эффектов (%) <input type="number" min="0" max="300" step="5" data-probability="sideEffectScale" value="${fmt((m.config.sideEffectScale??1)*100)}" /></label>
+  <p class="abop-muted">Базовая вероятность побочных эффектов: пероральный подавитель — 8%, длительный — 12%, экстренный — 10%, блокатор феромонов — 4%, обычный контрацептив — 8%, экстренный — 10%. Множитель применяется к каждому препарату отдельно.</p>
+  <hr/><button data-action="openSetup">Открыть начальную настройку профиля</button><button data-action="reanalyze">Повторно проанализировать последний ответ</button><button data-action="export">Экспортировать данные чата</button><p class="abop-muted">Ручные изменения имеют приоритет перед автоматическим анализом. Применяются только события выбранного варианта ответа.</p></section>`;
 }
 function personCard(id,p,m){
  const own=effectiveOverrides(m)?.[id]||{};
  const options=(val,items)=>items.map(([k,v])=>`<option value="${k}" ${val===k?'selected':''}>${v}</option>`).join('');
  const canonicalABO=effectiveCanon(m)?.[id]?.secondary;
  const displayedABO=own.secondary||(['alpha','beta','omega'].includes(canonicalABO)?canonicalABO:'unknown');
- return `<section class="abop-frame abop-person"><header><span class="abop-icon">${id==='char'?'◇':'◆'}</span> ${id.toUpperCase()} <small>${id==='char'?'캐릭터':'페르소나'}</small></header>
+ return `<section class="abop-frame abop-person"><header><span class="abop-icon">${id==='char'?'◇':'◆'}</span> ${id.toUpperCase()} <small>${id==='char'?'Персонаж':'Персона'}</small></header>
  <div class="abop-title">${html(p.name)}</div>
- <div class="abop-fields"><label>성별<select data-person="${id}" data-field="sex">${options(p.sex,[['unknown','미설정'],['male','남성'],['female','여성'],['nonbinary','기타']])}</select></label>
- <label>알파·베타·오메가<select data-person="${id}" data-field="secondary">${options(displayedABO,[['unknown','미설정 · AI 제안 받기'],['alpha','알파'],['beta','베타'],['omega','오메가']])}</select></label>
- <label>신체 유형<select data-person="${id}" data-field="anatomy">${options(p.anatomy||anatomyDefault(p.sex,p.secondary),anatomyChoices(p.sex,p.secondary))}</select></label>
- <label>러트/히트 상태<select data-person="${id}" data-field="cycleMode">${options(cycleMode(p),[['enabled','사용 · 현재 주기 계산'],['disabled','사용 안 함 · 추적 중지'],['absent','생리적으로 없음'],['unset','미설정 · 판단 보류']])}</select></label></div>
- <div class="abop-savebar"><small>항목 변경 시 자동 저장됩니다. 자동 배정된 ABO도 확정할 수 있습니다.</small><button type="button" data-action="saveABO" data-role="${id}">ABO 선택 저장</button></div>
- <details class="abop-advanced"><summary>기초 상태값 · 직접 수정</summary><p class="abop-muted">현재 수치는 기초값에 주기·복용·부작용·명시된 서사 상태를 반영한 가상 지표입니다. 이전 버전의 일괄 70/50은 자동으로 고정하지 않습니다.</p><div class="abop-fields"><label>기초 컨디션 (0~100)<input type="number" min="0" max="100" step="1" data-person="${id}" data-field="baseCondition" value="${fmt(p.vitalBaseline.condition)}" /></label><label>기초 페로몬 (0~100)<input type="number" min="0" max="100" step="1" data-person="${id}" data-field="basePheromone" value="${fmt(p.vitalBaseline.emission)}" /></label></div><p class="abop-muted">기초 산정: ${html(localizedText('status',id,'baseline',p.vitalBaseline.source||'',p.vitalBaseline.source||'개별 기초 추정'))}</p></details>
- <div class="abop-meterlabel">현재 컨디션 <b>${fmt(p.body.condition)}</b></div><div class="abop-meter"><i style="width:${clamp(p.body.condition,0,100)}%"></i></div>
- <div class="abop-meterlabel">현재 페로몬 발산 <b>${fmt(p.pheromone.emission)}</b></div><div class="abop-meter mint"><i style="width:${clamp(p.pheromone.emission,0,100)}%"></i></div>
- <div class="abop-tagrow"><span>${p.cycle.enabled?html(cyclePhaseLabel(p.cycle.phase)):html(cycleModeLabel(cycleMode(p)))}</span>${p.menstruation.phase==='menstruating'?'<span class="abop-menses-tag">● 월경 중</span>':''}<span>${html(({alpha:'알파',beta:'베타',omega:'오메가'})[displayedABO]||'미설정 · AI 제안 대기')}</span><span>${p.bondWith?'결합 ♥':'미결합'}</span></div>
- <div class="abop-muted">각인 상대: ${html((p.bondPartners||[]).map(pid=>state.people[pid]?.name||pid).join(', ')||'없음')} · ${html(cycleModeLabel(cycleMode(p)))}</div>
- ${bondEffects(state,id)?`<div class="abop-muted">각인 페로몬: 상대 ${bondEffects(state,id).partnerScentSensitivity>=0?'+':''}${bondEffects(state,id).partnerScentSensitivity} · 타인 ${bondEffects(state,id).otherScentSensitivity} · 불쾌감 +${bondEffects(state,id).otherScentDiscomfort} · 실제 민감도(상대/타인) ${effectivePheromoneResponse(state,id).partnerSensitivity}/${effectivePheromoneResponse(state,id).otherSensitivity} · 분리 스트레스 (기본/현재 히트·러트) ${bondSeparationStress(state,id,{separated:true}).total}</div>`:''}
- <div class="abop-muted">지속 상태: ${p.medication.filter(x=>x.until>=state.clockHours).map(x=>html(drugLabel(x.drug))).join(', ')||'없음'}</div>
- ${p.anatomy==='custom'?`<label class="abop-fieldlabel">특수 생식 구조<textarea data-person="${id}" data-field="anatomyDetail" rows="2" placeholder="구조 설명">${html(p.anatomyDetail||'')}</textarea></label>`:''}
- ${p.sex==='female'&&p.secondary==='alpha'?`<details class="abop-advanced"><summary>여성 Alpha · 가상 생식기관</summary><label class="abop-fieldlabel">생식기관·전달 경로 설명<textarea data-person="${id}" data-field="inseminationOrgan" rows="2" placeholder="외형과 별도로 임신 능력 유지">${html(p.inseminationOrgan||'')}</textarea></label></details>`:''}
+ <div class="abop-fields"><label>Пол<select data-person="${id}" data-field="sex">${options(p.sex,[['unknown','Не задано'],['male','Мужской'],['female','Женский'],['nonbinary','Другое']])}</select></label>
+ <label>Альфа · Бета · Омега<select data-person="${id}" data-field="secondary">${options(displayedABO,[['unknown','Не задано · предложить с ИИ'],['alpha','Альфа'],['beta','Бета'],['omega','Омега']])}</select></label>
+ <label>Тип тела<select data-person="${id}" data-field="anatomy">${options(p.anatomy||anatomyDefault(p.sex,p.secondary),anatomyChoices(p.sex,p.secondary))}</select></label>
+ <label>Состояние гона / течки<select data-person="${id}" data-field="cycleMode">${options(cycleMode(p),[['enabled','Включено · рассчитывать цикл'],['disabled','Отключено · не отслеживать'],['absent','Физиологически отсутствует'],['unset','Не задано · отложить решение']])}</select></label></div>
+ <div class="abop-savebar"><small>Изменения сохраняются автоматически. Автоматически назначенный ABO тоже можно подтвердить.</small><button type="button" data-action="saveABO" data-role="${id}">Сохранить ABO</button></div>
+ <details class="abop-advanced"><summary>Базовые показатели · ручное редактирование</summary><p class="abop-muted">Текущие показатели учитывают базу, цикл, препараты, побочные эффекты и состояние в сюжете. Общие значения 70/50 из старой версии не закрепляются автоматически.</p><div class="abop-fields"><label>Базовое самочувствие (0–100)<input type="number" min="0" max="100" step="1" data-person="${id}" data-field="baseCondition" value="${fmt(p.vitalBaseline.condition)}" /></label><label>Базовые феромоны (0–100)<input type="number" min="0" max="100" step="1" data-person="${id}" data-field="basePheromone" value="${fmt(p.vitalBaseline.emission)}" /></label></div><p class="abop-muted">Основание оценки: ${html(localizedText('status',id,'baseline',p.vitalBaseline.source||'',p.vitalBaseline.source||'Индивидуальная базовая оценка'))}</p></details>
+ <div class="abop-meterlabel">Текущее самочувствие <b>${fmt(p.body.condition)}</b></div><div class="abop-meter"><i style="width:${clamp(p.body.condition,0,100)}%"></i></div>
+ <div class="abop-meterlabel">Выделение феромонов <b>${fmt(p.pheromone.emission)}</b></div><div class="abop-meter mint"><i style="width:${clamp(p.pheromone.emission,0,100)}%"></i></div>
+ <div class="abop-tagrow"><span>${p.cycle.enabled?html(cyclePhaseLabel(p.cycle.phase)):html(cycleModeLabel(cycleMode(p)))}</span>${p.menstruation.phase==='menstruating'?'<span class="abop-menses-tag">● Менструация</span>':''}<span>${html(({alpha:'Альфа',beta:'Бета',omega:'Омега'})[displayedABO]||'Не задано · ожидается предложение ИИ')}</span><span>${p.bondWith?'Связь ♥':'Без связи'}</span></div>
+ <div class="abop-muted">Партнёры по связи: ${html((p.bondPartners||[]).map(pid=>state.people[pid]?.name||pid).join(', ')||'Нет')} · ${html(cycleModeLabel(cycleMode(p)))}</div>
+ ${bondEffects(state,id)?`<div class="abop-muted">Феромоны связи: партнёр ${bondEffects(state,id).partnerScentSensitivity>=0?'+':''}${bondEffects(state,id).partnerScentSensitivity} · другие ${bondEffects(state,id).otherScentSensitivity} · Дискомфорт +${bondEffects(state,id).otherScentDiscomfort} · Чувствительность (партнёр / другие) ${effectivePheromoneResponse(state,id).partnerSensitivity}/${effectivePheromoneResponse(state,id).otherSensitivity} · Стресс разлуки (база / текущая течка или гон) ${bondSeparationStress(state,id,{separated:true}).total}</div>`:''}
+ <div class="abop-muted">Действующие эффекты: ${p.medication.filter(x=>x.until>=state.clockHours).map(x=>html(drugLabel(x.drug))).join(', ')||'Нет'}</div>
+ ${p.anatomy==='custom'?`<label class="abop-fieldlabel">Особая репродуктивная анатомия<textarea data-person="${id}" data-field="anatomyDetail" rows="2" placeholder="Описание анатомии">${html(p.anatomyDetail||'')}</textarea></label>`:''}
+ ${p.sex==='female'&&p.secondary==='alpha'?`<details class="abop-advanced"><summary>Женщина-альфа · вымышленный репродуктивный орган</summary><label class="abop-fieldlabel">Описание органа и репродуктивного пути<textarea data-person="${id}" data-field="inseminationOrgan" rows="2" placeholder="Способность к зачатию независимо от внешнего вида">${html(p.inseminationOrgan||'')}</textarea></label></details>`:''}
  </section>`;
 }
 /** Keep the mobile dialog wholly inside the *visible* viewport. On iOS Safari,
@@ -855,9 +855,9 @@ function render(){
  const m=meta(false);
  const theme=m?.config?.uiTheme||'auto';
  root.dataset.theme=theme==='light'||theme==='dark'?theme:(window.matchMedia?.('(prefers-color-scheme: dark)')?.matches?'dark':'light');
- root.innerHTML=`<div class="abop-window"><div class="abop-top"><span class="abop-brandmark" aria-hidden="true"></span><strong>그날의 사정 <small>ABO TRACKER</small></strong><span class="abop-version">v1.0.1</span><button title="테마 전환" aria-label="테마 전환" data-action="themeCycle" class="abop-theme-button">◐</button><button title="닫기" aria-label="닫기" data-action="close">✕</button></div>
- <div class="abop-shell"><nav class="abop-nav">${[['status','상태','▦'],['setup','초기 설정','◈'],['cycles','주기','◷'],['fertility','임신','✦'],['preferences','취향','♥'],['scenes','장면','▣'],['settings','설정','⚙']].map(([id,label,icon])=>`<button data-tab="${id}" class="${tab===id?'selected':''}"><span>${icon}</span><small>${label}</small></button>`).join('')}</nav>
- <main class="abop-main"><div class="abop-subhead"><span>◈ ${({'status':'상태','setup':'초기 설정','cycles':'주기','fertility':'임신','preferences':'취향','scenes':'장면','settings':'설정'}[tab]||tab.toUpperCase())} / ${html(S()?.chatId?'현재 채팅':'채팅 없음')}</span><span class="abop-dot">● ${working?'분석 중':'준비됨'}</span></div>${selectedSection()}</main></div><footer class="abop-statusbar" id="abop-statusline" role="status" aria-live="polite">${html(status)}</footer></div>`;
+ root.innerHTML=`<div class="abop-window"><div class="abop-top"><span class="abop-brandmark" aria-hidden="true"></span><strong>Дела того дня <small>ТРЕКЕР ABO</small></strong><span class="abop-version">v1.0.1</span><button title="Переключить тему" aria-label="Переключить тему" data-action="themeCycle" class="abop-theme-button">◐</button><button title="Закрыть" aria-label="Закрыть" data-action="close">✕</button></div>
+ <div class="abop-shell"><nav class="abop-nav">${[['status','Состояние','▦'],['setup','Профиль','◈'],['cycles','Циклы','◷'],['fertility','Зачатие','✦'],['preferences','Интересы','♥'],['scenes','Сцены','▣'],['settings','Настройки','⚙']].map(([id,label,icon])=>`<button data-tab="${id}" class="${tab===id?'selected':''}"><span>${icon}</span><small>${label}</small></button>`).join('')}</nav>
+ <main class="abop-main"><div class="abop-subhead"><span>◈ ${({'status':'Состояние','setup':'Начальная настройка','cycles':'Циклы','fertility':'Беременность','preferences':'Предпочтения','scenes':'Сцены','settings':'Настройки'}[tab]||tab.toUpperCase())} / ${html(S()?.chatId?'Текущий чат':'Нет чата')}</span><span class="abop-dot">● ${working?'Анализ…':'Готово'}</span></div>${selectedSection()}</main></div><footer class="abop-statusbar" id="abop-statusline" role="status" aria-live="polite">${html(status)}</footer></div>`;
  const scrollArea=root.querySelector('.abop-main');if(scrollArea)scrollArea.scrollTop=previousScroll;
 }
 function openTrackerPanel(){
@@ -870,7 +870,7 @@ function buildUI(){
  // Remove a surviving old floating launcher if extensions hot-reload in place.
  el('abop-open')?.remove();
  if(!el('abop-panel')){
-  const panel=document.createElement('div');panel.id='abop-panel';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','그날의 사정');panel.addEventListener('click',handlePanelClick);panel.addEventListener('change',handlePanelChange);document.body.appendChild(panel);
+  const panel=document.createElement('div');panel.id='abop-panel';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','Дела того дня');panel.addEventListener('click',handlePanelClick);panel.addEventListener('change',handlePanelChange);document.body.appendChild(panel);
  }
  if(!window.__abopViewportListenerInstalled){
   window.__abopViewportListenerInstalled=true;
@@ -913,7 +913,7 @@ async function handlePanelChange(e){
  }else if(t.dataset.proposalValue){
   const role=t.dataset.proposalValue,rec=m.initialProposal?.roles?.[role],f=rec?.fields?.[Number(t.dataset.i)];
   if(f){
-   if(typeof f.value==='number'){const n=Number(t.value);if(!Number.isFinite(n)||t.value.trim()===''||n<0||n>100)return setStatus('기초 수치는 0~100으로 입력하세요');f.value=Math.round(n);}
+   if(typeof f.value==='number'){const n=Number(t.value);if(!Number.isFinite(n)||t.value.trim()===''||n<0||n>100)return setStatus('Введите базовое значение от 0 до 100');f.value=Math.round(n);}
    else f.value=typeof f.value==='boolean'?t.value==='true':t.value;
    if(['sex','secondary','anatomy'].includes(f.key)){
     const source=effectiveCanon(m)?.[role]||{},manual=effectiveOverrides(m)?.[role]||{};
@@ -924,7 +924,7 @@ async function handlePanelChange(e){
      if(f.key==='anatomy')anatomy.source='user_edited';
      else if(!anatomyChoices(sex,abo).some(([value])=>value===anatomy.value)){
       anatomy.value=anatomyChoices(sex,abo)[0]?.[0]||anatomyDefault(sex,abo);
-      anatomy.source='arbitrary';anatomy.reason='제2성별·성별 변경에 따라 허용된 ABO 신체 유형 후보군에서 다시 선택했다.';
+      anatomy.source='arbitrary';anatomy.reason='После изменения пола и вторичного пола выбран новый совместимый ABO вариант анатомии.';
      }
     }
     alignInitialPhysiologyProposal(rec,{source,manual});
@@ -936,7 +936,7 @@ async function handlePanelChange(e){
   if(pref){
    const original=pref.id, shown=preferenceDisplayLabel(pref,m.preferenceTranslations||{}), edited=String(t.value||'').trim();
    pref.id=edited===shown?original:preferenceIdFromEdit(edited,original,pref.label);
-   if(edited!==shown){pref.label=/[가-힣]/u.test(edited)?edited:'';if(m.preferenceTranslations)delete m.preferenceTranslations[original];}
+   if(edited!==shown){pref.label=/[А-Яа-яЁё]/u.test(edited)?edited:'';if(m.preferenceTranslations)delete m.preferenceTranslations[original];}
   }
  }else if(t.dataset.prefLevel){const pref=m.initialProposal?.roles?.[t.dataset.prefLevel]?.confirmed?.[Number(t.dataset.i)];if(pref&&LEVELS.some(x=>x[0]===t.value))pref.level=t.value;
  }else if(t.dataset.prefAttitude){const d=m.initialProposal?.roles?.[t.dataset.prefAttitude];if(d)d.attitude=t.value;
@@ -945,7 +945,7 @@ async function handlePanelChange(e){
   const id=t.dataset.person,field=t.dataset.field;
   let value=field==='cycleEnabled'?t.value==='true':t.value;
   if(['baseCondition','basePheromone'].includes(field)){
-   const n=Number(t.value);if(!Number.isFinite(n)||t.value.trim()===''||n<0||n>100)return setStatus('기초 수치는 0~100으로 입력하세요');value=Math.round(n);
+   const n=Number(t.value);if(!Number.isFinite(n)||t.value.trim()===''||n<0||n>100)return setStatus('Введите базовое значение от 0 до 100');value=Math.round(n);
   }
   if(field==='secondary'&&value==='unknown')delete currentRoleOverrides(m,id).secondary;
   else currentRoleOverrides(m,id)[field]=value;
@@ -965,18 +965,18 @@ async function handlePanelChange(e){
   saveSharedAnalysisSetting(t.dataset.custom,t.dataset.custom==='setupMaxTokens'?normalizeSetupOutputTokens(t.value):t.value.trim());
  }else if(t.hasAttribute('data-secret')){
   // Never write keys to metadata, world info, backups, or console logs.
-  sessionApiKey=t.value.trim();t.value='';setStatus(sessionApiKey?'임시 API 키가 메모리에 등록됨':'임시 API 키가 비어 있음');
+  sessionApiKey=t.value.trim();t.value='';setStatus(sessionApiKey?'Временный API ключ сохранён в памяти':'Временный API ключ не задан');
  }else if(t.dataset.rate){m.config.rate[t.dataset.rate]=clamp(Number(t.value)/100,0,1);
- }else if(t.dataset.probability){const key=t.dataset.probability;if(!['oralContraceptiveEffectiveness','emergencyContraceptiveReduction','longSuppressantSuccess','sideEffectScale'].includes(key))return;const n=Number(t.value),max=key==='sideEffectScale'?300:100;if(!Number.isFinite(n)||n<0||n>max)return setStatus(`확률 설정 범위: 0~${max}%`);m.config[key]=n/100;
+ }else if(t.dataset.probability){const key=t.dataset.probability;if(!['oralContraceptiveEffectiveness','emergencyContraceptiveReduction','longSuppressantSuccess','sideEffectScale'].includes(key))return;const n=Number(t.value),max=key==='sideEffectScale'?300:100;if(!Number.isFinite(n)||n<0||n>max)return setStatus(`Диапазон вероятности: 0~${max}%`);m.config[key]=n/100;
  }else return;
  const saved=(t.hasAttribute('data-connection')||t.dataset.custom||t.dataset.postprocess||t.hasAttribute('data-postprocess-scope'))?true:await persist();refresh();
- if(t.dataset.person)setStatus(saved?`${t.dataset.person.toUpperCase()} ${t.dataset.field==='secondary'?'ABO':'설정'} 변경 자동 저장 완료`:'채팅 설정 저장 실패 · 콘솔 확인');
+ if(t.dataset.person)setStatus(saved?`${t.dataset.person.toUpperCase()} ${t.dataset.field==='secondary'?'ABO':'Настройки'} изменения сохранены автоматически`:'Ошибка сохранения настроек чата · проверьте консоль');
 }
 async function addManualEvents(events){
- const m=meta(),src=sourceForCurrent();syncCanon();if(!m||!src)return setStatus('먼저 대화를 시작하세요');
- if(!currentNpcReady(m))return setStatus('먼저 CHAR 추적 NPC를 선택하세요');
+ const m=meta(),src=sourceForCurrent();syncCanon();if(!m||!src)return setStatus('Сначала начните диалог');
+ if(!currentNpcReady(m))return setStatus('Сначала выберите NPC для отслеживания CHAR');
  const key=src.key,target=selectedNpcId(m),ledger=currentCharLedger(m);let rec=ledger[key]||{analyzed:false,events:[],manual:[]};
- if(rec.personaId&&rec.personaId!==m.userPersonaIdentity)return setStatus('이 응답은 이전 USER 페르소나의 기록입니다. 새 응답 뒤에 사건을 기록하세요.');
+ if(rec.personaId&&rec.personaId!==m.userPersonaIdentity)return setStatus('Этот ответ относится к прежней USER персоне. Записывайте события после нового ответа.');
  const rows=events.map((e,i)=>({...e,id:`${key}/manual:${Date.now()}:${i}`,...(e.kind==='bond'?{allowMultipleAtCreation:m.config.asymmetricBond===true}:{})}));
  if(target!==MAIN_TARGET){
   const shared=rows.filter(sharedEvent),local=rows.filter(e=>!sharedEvent(e));
@@ -992,11 +992,11 @@ async function handlePanelClick(e){
  if(act==='close'){panelOpen=false;render();return;}
  if(act==='themeCycle'){const m=meta();m.config.uiTheme=m.config.uiTheme==='dark'?'light':'dark';await persist();refresh();return;}
  if(act==='singleNpc'){await switchNpc(MAIN_TARGET);return;}
- if(act==='multiNpc'){const m=meta(),t=npcTracking(m);if(m.initialProposal)t.pending[MAIN_TARGET]=m.initialProposal;t.mode='multi';t.activeId=t.activeId===MAIN_TARGET?'':t.activeId;m.initialProposal=t.pending[t.activeId]||null;await persist();refresh();setStatus('다인 봇 모드 · NPC를 선택하거나 직접 추가하세요');return;}
+ if(act==='multiNpc'){const m=meta(),t=npcTracking(m);if(m.initialProposal)t.pending[MAIN_TARGET]=m.initialProposal;t.mode='multi';t.activeId=t.activeId===MAIN_TARGET?'':t.activeId;m.initialProposal=t.pending[t.activeId]||null;await persist();refresh();setStatus('Режим нескольких персонажей · NPC выберите или добавьте вручную');return;}
  if(act==='scanNPCs'){await scanNpcSources();return;}
  if(act==='scanNPCsAI'){await scanNpcWithAI();return;}
  if(act==='selectNpc'){
-  const id=el('abop-npc-select')?.value,m=meta();if(!id)return setStatus('NPC를 먼저 선택하세요');
+  const id=el('abop-npc-select')?.value,m=meta();if(!id)return setStatus('NPC сначала выберите');
   const t=npcTracking(m),candidate=npcCandidates.find(x=>x.id===id);
   if(!t.targets[id]&&candidate)t.targets[id]={...npcCanon(candidate),overrides:{}};
   await switchNpc(id);return;
@@ -1004,99 +1004,99 @@ async function handlePanelClick(e){
  if(act==='addNpc'){
   const m=meta(),name=el('abop-npc-name')?.value,description=el('abop-npc-description')?.value;
   const aliases=(el('abop-npc-aliases')?.value||'').split(',').map(x=>x.trim()).filter(Boolean);
-  let target;try{target=namedTarget(name,description,'직접 추가',aliases);}catch(e){return setStatus(e.message);}
-  const t=npcTracking(m);if(t.targets[target.id])return setStatus('이미 추가된 NPC입니다. 목록에서 해당 인물을 선택해 주세요');
+  let target;try{target=namedTarget(name,description,'Добавлено вручную',aliases);}catch(e){return setStatus(e.message);}
+  const t=npcTracking(m);if(t.targets[target.id])return setStatus('Уже добавлен NPC. Выберите его в списке');
   t.targets[target.id]={...target,overrides:{}};await switchNpc(target.id);return;
  }
  if(act==='registerBondNpc'){
-  const raw=window.prompt('고유 NPC ID (영문/숫자/밑줄/하이픈, 2~48자)','');
+  const raw=window.prompt('Уникальный ID NPC (латиница, цифры, подчёркивание, дефис; 2–48 символов)','');
   if(raw===null)return;
-  if(!/^[a-z0-9_-]{2,48}$/i.test(raw))return setStatus('유효한 NPC ID가 아닙니다');
+  if(!/^[a-z0-9_-]{2,48}$/i.test(raw))return setStatus('Недопустимый NPC ID.');
   const personId=`npc:${raw.toLowerCase()}`;
-  if(branchState()?.people[personId])return setStatus('동일 NPC ID가 이미 등록되어 있습니다');
-  const name=window.prompt('NPC 이름','');if(!name?.trim())return;
+  if(branchState()?.people[personId])return setStatus('Такой ID NPC уже зарегистрирован');
+  const name=window.prompt('Имя NPC','');if(!name?.trim())return;
   const secondary=window.prompt('ABO: alpha / omega / beta','omega');
   if(!['alpha','omega','beta'].includes(secondary))return;
   await addManualEvents([{kind:'npc_register',person:personId,name:name.trim(),secondary}]);
-  setStatus('NPC 등록 완료');return;
+  setStatus('NPC добавлен');return;
  }
  if(act==='manualBond'){
-  const kind=window.prompt('사건: bond (각인) / bond_loss (상실)','bond');
+  const kind=window.prompt('Событие: bond (связь) / bond_loss (утрата)','bond');
   if(!['bond','bond_loss'].includes(kind))return;
-  const actor=window.prompt('알파 ID (char / user / 등록된 npc:ID)','char');
-  const target=window.prompt('오메가 ID (char / user / 등록된 npc:ID)','user');
+  const actor=window.prompt('ID альфы (char / user / зарегистрированный npc:ID)','char');
+  const target=window.prompt('ID омеги (char / user / зарегистрированный npc:ID)','user');
   const s=branchState();
-  if(!s.people[actor]||!s.people[target]||actor===target)return setStatus('등록된 인물 ID를 입력하세요');
+  if(!s.people[actor]||!s.people[target]||actor===target)return setStatus('Введите ID зарегистрированного персонажа');
   if(kind==='bond'){
-   if(s.people[actor].secondary!=='alpha'||s.people[target].secondary!=='omega')return setStatus('각인은 알파 → 오메가만 가능합니다');
-   if(!window.confirm('알파가 오메가의 목덜미 페로몬선을 실제로 물어 각인이 성립했습니까?'))return;
+   if(s.people[actor].secondary!=='alpha'||s.people[target].secondary!=='omega')return setStatus('Связь возможна только от альфы к омеге');
+   if(!window.confirm('Альфа действительно укусил феромонную железу на загривке омеги и установил связь?'))return;
    await addManualEvents([{kind:'bond',actor,target,person:actor,partner:target,biteLocation:'pheromone_nape',biteConfirmed:true}]);
   }else{
-   const cause=window.prompt('상실 원인: surgery / drug_adverse / death','surgery');
+   const cause=window.prompt('Причина утраты: surgery (операция) / drug_adverse (побочный эффект) / death (смерть)','surgery');
    if(!['surgery','drug_adverse','death'].includes(cause))return;
-   if(!window.confirm('각인 상실 사건이 서사에서 실제로 발생했습니까?'))return;
+   if(!window.confirm('Утрата связи действительно произошла в сюжете?'))return;
    await addManualEvents([{kind:'bond_loss',person:actor,partner:target,cause}]);
   }
-  setStatus('각인 사건 저장 완료');return;
+  setStatus('Событие связи сохранено');return;
  }
  if(act==='clearFixedField'||act==='resetInitialProfile'){
-  if(working||postprocessBusy)return setStatus('진행 중인 분석·후처리가 끝난 뒤 초기화하세요.');
+  if(working||postprocessBusy)return setStatus('Дождитесь окончания анализа и перевода перед сбросом.');
   const m=meta(),role=t.dataset.role;
   if(!m||!['char','user','both'].includes(role))return;
   const field=act==='clearFixedField'?el(`abop-clear-field-${role}`)?.value:null;
-  if(act==='clearFixedField'&&!field)return setStatus('해제할 고정 항목을 선택해 주세요.');
-  const message=field?`${role.toUpperCase()}의 ${field} 고정을 해제할까요?`:`${role==='both'?'CHAR + USER':role.toUpperCase()}의 초기 프로필 설정을 초기화할까요? RP 기록과 분석 사건은 삭제되지 않습니다.`;
+  if(act==='clearFixedField'&&!field)return setStatus('Выберите поле для открепления.');
+  const message=field?`Открепить поле ${field} у ${role.toUpperCase()}?`:`${role==='both'?'CHAR + USER':role.toUpperCase()} — сбросить начальные настройки профиля? RP История и результаты анализа сохраняются.`;
   if(!window.confirm(message))return;
   const before=structuredClone({overrides:m.overrides,canon:m.canon,profileInitialized:m.profileInitialized,initialProposal:m.initialProposal,personaProfiles:m.personaProfiles,npcTracking:m.npcTracking});
   let n=0;
   try{n=resetProfileChoices(m,{role,field,target:selectedNpc(m)});}catch(err){return setStatus(err.message);}
   if(!await persist()){
-   Object.assign(m,before);refresh();return setStatus('프로필 초기화 저장 실패 · 이전 설정 복원');
+   Object.assign(m,before);refresh();return setStatus('Сброс не сохранён · прежние настройки восстановлены');
   }
-  refresh();setStatus(field?`고정 해제 완료 · ${role.toUpperCase()} ${field}`:`초기 프로필 설정 초기화 완료 · ${n}개 수동 고정 해제`);return;
+  refresh();setStatus(field?`Поле откреплено · ${role.toUpperCase()} ${field}`:`Начальные настройки профиля сброшены · ${n} полей откреплено`);return;
  }
  if(act==='recordMenstruationStart'||act==='recordMenstruationEnd'){
-  if(working)return setStatus('진행 중인 분석이 끝난 뒤 기록하세요.');
+  if(working)return setStatus('Дождитесь окончания анализа, прежде чем добавлять запись.');
   const role=t.dataset.role,s=branchState();
-  if(!['char','user'].includes(role)||!s?.people?.[role]?.menstruation.enabled)return setStatus('월경 추적이 활성화된 대상만 기록할 수 있습니다.');
+  if(!['char','user'].includes(role)||!s?.people?.[role]?.menstruation.enabled)return setStatus('Запись доступна только при включённом отслеживании менструации.');
   const isEnd=act==='recordMenstruationEnd';
-  if(isEnd&&cycleForecast(s.people[role],s.clockHours,s.seed).menstruationStatus!=='active')return setStatus('현재 월경 중인 기록이 없습니다.');
-  if(!window.confirm(`${role.toUpperCase()}의 월경 ${isEnd?'종료':'시작'}를 현재 서사 시점에 기록할까요?`))return;
+  if(isEnd&&cycleForecast(s.people[role],s.clockHours,s.seed).menstruationStatus!=='active')return setStatus('Нет записи о текущей менструации.');
+  if(!window.confirm(`${role.toUpperCase()} — менструация: ${isEnd?'конец':'начало'} — записать в текущий момент сюжета?`))return;
   await addManualEvents([{kind:isEnd?'menstruation_end':'menstruation_start',person:role}]);
-  setStatus(`${role.toUpperCase()} 월경 ${isEnd?'종료':'시작'} 사건 기록 완료`);return;
+  setStatus(`${role.toUpperCase()} Менструация ${isEnd?'конец':'начало'} событие записано`);return;
  }
  if(act==='resetPostprocessCache'){
-  if(postprocessBusy||working)return setStatus('진행 중인 후처리가 끝난 뒤 초기화하세요.');
+  if(postprocessBusy||working)return setStatus('Дождитесь окончания перевода перед сбросом.');
   const m=meta();if(!m)return;
-  if(!window.confirm('이 채팅의 한국어 후처리 번역 캐시를 초기화할까요? 원본 사건·취향·장면은 유지되며, 다시 번역하면 API 비용이 발생할 수 있습니다.'))return;
+  if(!window.confirm('Очистить кэш перевода этого чата? Исходные события, предпочтения и сцены сохраняются. Повторный перевод может повлечь расходы на API.'))return;
   const backup=m.displayPostprocessCache||{};
   m.displayPostprocessCache={};
-  if(!await persist()){m.displayPostprocessCache=backup;return setStatus('번역 캐시 초기화 저장 실패');}
+  if(!await persist()){m.displayPostprocessCache=backup;return setStatus('Не удалось сохранить очистку кэша');}
   for(const key of [...autoPostprocessFailures])if(key.startsWith(`${S().chatId}:`))autoPostprocessFailures.delete(key);
-  refresh();setStatus('현재 채팅의 후처리 번역 캐시 초기화 완료');return;
+  refresh();setStatus('Кэш перевода текущего чата очищен');return;
  }
- if(act==='cancelPostprocess'){postprocessCancel=true;setStatus('진행 중인 요청이 완료된 뒤 후처리를 중단합니다. 원본 데이터는 변경되지 않습니다.');return;}
+ if(act==='cancelPostprocess'){postprocessCancel=true;setStatus('Перевод остановится после завершения текущего запроса. Исходные данные сохраняются.');return;}
  if(act==='postprocessExisting'){await runDisplayPostprocess();return;}
  if(act==='translatePreferences'){
   const m=meta();if(!m||!state||working)return;
   const sourceChat=S().chatId,sourcePersona=m.userPersonaIdentity,sourceNpc=selectedNpcId(m);
   const prefs=Object.values(state.people).flatMap(p=>[...(p.preferences?.confirmed||[]),...(p.preferences?.latent||[])]);
   const items=localizationItems(prefs,m.preferenceTranslations||{});
-  if(!items.length)return setStatus('정리할 취향 항목이 없습니다');
-  working=true;setStatus(`한국어 표시명 정리 중 · ${items.length}개 항목`);render();
+  if(!items.length)return setStatus('Нет предпочтений для обработки');
+  working=true;setStatus(`Перевод подписей на русский · ${items.length} записей`);render();
   try{
    const translated={};
    for(let i=0;i<items.length;i+=30){
     const chunk=items.slice(i,i+30);
-    setStatus(`한국어 표시명 정리 중 · ${Math.min(i+chunk.length,items.length)}/${items.length}개`);
+    setStatus(`Перевод подписей на русский · ${Math.min(i+chunk.length,items.length)}/${items.length} `);
     const raw=await analysisRequest(PREFERENCE_LOCALIZATION_SYSTEM,localizationPrompt(chunk),Math.max(900,chunk.length*55));
     Object.assign(translated,parseLocalizationOutput(raw,chunk));
    }
-   if(S().chatId!==sourceChat||meta(false)!==m||m.userPersonaIdentity!==sourcePersona||selectedNpcId(m)!==sourceNpc){setStatus('채팅·페르소나가 변경되어 번역 결과를 적용하지 않았습니다');return;}
-   if(!Object.keys(translated).length)throw new Error('검증을 통과한 한국어 표시명이 없습니다');
+   if(S().chatId!==sourceChat||meta(false)!==m||m.userPersonaIdentity!==sourcePersona||selectedNpcId(m)!==sourceNpc){setStatus('Перевод не применён: изменился чат или персона');return;}
+   if(!Object.keys(translated).length)throw new Error('Нет русских подписей, прошедших проверку');
    m.preferenceTranslations={...(m.preferenceTranslations||{}),...translated};
-   await persist();setStatus(`한국어 표시명 ${Object.keys(translated).length}개 정리 완료 · 원본 취향/등급 유지`);
-  }catch(err){setStatus(`표시명 정리 실패: ${err.message||'모델 연결을 확인하세요'}`);}
+   await persist();setStatus(`Русских подписей: ${Object.keys(translated).length} · обработано, исходные предпочтения и уровни сохранены`);
+  }catch(err){setStatus(`Ошибка обработки подписей: ${err.message||'Проверьте подключение модели'}`);}
   finally{working=false;refresh();}
   return;
  }
@@ -1104,9 +1104,9 @@ async function handlePanelClick(e){
  if(act==='saveABO'){
   const role=t.dataset.role;if(!['char','user'].includes(role))return;
   const m=meta();const selected=el('abop-panel')?.querySelector(`select[data-person="${role}"][data-field="secondary"]`)?.value;
-  if(!['alpha','beta','omega'].includes(selected))return setStatus('ABO 선택값이 올바르지 않습니다');
+  if(!['alpha','beta','omega'].includes(selected))return setStatus('Неверное выбранное значение ABO');
   currentRoleOverrides(m,role).secondary=selected;
-  const saved=await persist();refresh();setStatus(saved?`${role.toUpperCase()} ABO ${selected.toUpperCase()} 선택 저장 완료`:'ABO 설정 저장 실패 · 콘솔 확인');return;
+  const saved=await persist();refresh();setStatus(saved?`${role.toUpperCase()} ABO ${selected.toUpperCase()} выбор сохранён`:'Ошибка сохранения настроек ABO · проверьте консоль');return;
  }
  if(act==='applyProposal'){await applyProfileProposal();return;}
  if(act==='addPref'){
@@ -1115,58 +1115,58 @@ async function handlePanelClick(e){
   const m=meta(),d=m?.initialProposal?.roles?.[role];if(!d)return;
   const input=el(`abop-newpref-${role}`);
   const tag=preferenceIdFromEdit(input?.value||'');
-  if(!/^[\p{L}\p{N}_ -]{2,80}$/u.test(tag))return setStatus('취향 이름은 글자·숫자·공백·밑줄로 2~80자 입력하세요');
-  if([...d.confirmed,...d.latent].some(p=>p.id.toLowerCase()===tag.toLowerCase()))return setStatus('이미 제안된 취향입니다');
-  d.latent.push({id:tag,level:'latent',reason:'사용자가 직접 추가한 후보',source:'custom',checked:true});
-  await persist();refresh();setStatus(`새 취향 후보 추가: ${preferenceLabel(tag)}`);return;
+  if(!/^[\p{L}\p{N}_ -]{2,80}$/u.test(tag))return setStatus('Название предпочтения: 2–80 символов, буквы, цифры, пробелы и подчёркивания');
+  if([...d.confirmed,...d.latent].some(p=>p.id.toLowerCase()===tag.toLowerCase()))return setStatus('Такое предпочтение уже предложено');
+  d.latent.push({id:tag,level:'latent',reason:'Вариант, добавленный пользователем',source:'custom',checked:true});
+  await persist();refresh();setStatus(`Добавлен новый вариант предпочтения: ${preferenceLabel(tag)}`);return;
  }
 
- if(act==='discardProposal'){const m=meta();m.initialProposal=null;await persist();refresh();setStatus('미적용 제안 폐기됨');return;}
- if(act==='refreshProfiles'){refresh();setStatus('연결 프로필 목록 새로고침 완료');return;}
- if(act==='clearKey'){sessionApiKey='';setStatus('임시 API 키 삭제됨');refresh();return;}
+ if(act==='discardProposal'){const m=meta();m.initialProposal=null;await persist();refresh();setStatus('Неприменённые предложения отброшены');return;}
+ if(act==='refreshProfiles'){refresh();setStatus('Список профилей подключения обновлён');return;}
+ if(act==='clearKey'){sessionApiKey='';setStatus('Временный API ключ удалён');refresh();return;}
  if(act==='testConnection'){
-  if(working)return;working=true;setStatus('분석 모델 연결 테스트 중…');render();
-  try{const reply=await analysisRequest('Answer using only the word OK.','Connection test.',64);setStatus(`연결 성공 (${String(reply).trim().slice(0,48)})`);}
-  catch(err){console.warn('[그날의 사정] connection test failed',readableProfileError(err));setStatus(`연결 실패: ${readableProfileError(err)} | ${profileErrorHint(err)}`);}
+  if(working)return;working=true;setStatus('Проверка подключения модели анализа…');render();
+  try{const reply=await analysisRequest('Answer using only the word OK.','Connection test.',64);setStatus(`Подключение работает (${String(reply).trim().slice(0,48)})`);}
+  catch(err){console.warn('[Дела того дня] connection test failed',readableProfileError(err));setStatus(`Ошибка подключения: ${readableProfileError(err)} | ${profileErrorHint(err)}`);}
   finally{working=false;render();}return;
  }
- if(act==='cancelHistoryScan'){historyScanCancelled=true;setStatus('현재 AI 요청 완료 후 재분석을 중단합니다. 기존 데이터는 변경하지 않습니다.');return;}
+ if(act==='cancelHistoryScan'){historyScanCancelled=true;setStatus('Текущее AI анализ остановится после текущего запроса. Прежние данные сохраняются.');return;}
  if(act==='previewHistoryState'){await previewHistoryState();return;}
- if(act==='cancelHistoryState'){historyStatePreview=null;render();setStatus('재분석 결과를 폐기했습니다. 기존 데이터 변경 없음');return;}
+ if(act==='cancelHistoryState'){historyStatePreview=null;render();setStatus('Результаты повторного анализа отброшены. Прежние данные сохраняются');return;}
  if(act==='applyHistoryState'){
   if(working)return;
   const m=meta(),p=historyStatePreview,c=S();
-  if(!m||!p||p.chatId!==c.chatId||p.personaId!==m.userPersonaIdentity||p.target!==selectedNpcId(m)||p.fingerprint!==historySnapshot(c.chat||[])||p.canonFingerprint!==JSON.stringify(effectiveCanon(m))||p.bondMode!==(m.config.asymmetricBond===true))return setStatus('채팅·페르소나·각인 설정이 변경되어 재분석 미리보기를 다시 만들어야 합니다');
+  if(!m||!p||p.chatId!==c.chatId||p.personaId!==m.userPersonaIdentity||p.target!==selectedNpcId(m)||p.fingerprint!==historySnapshot(c.chat||[])||p.canonFingerprint!==JSON.stringify(effectiveCanon(m))||p.bondMode!==(m.config.asymmetricBond===true))return setStatus('Изменился чат, персона или настройки связи. Создайте предпросмотр анализа заново');
   const selectedIds=new Set([...el('abop-panel').querySelectorAll('[data-history-state]:checked')].map(x=>x.dataset.historyState));
-  if(!selectedIds.size)return setStatus('적용할 사건을 선택하세요');
+  if(!selectedIds.size)return setStatus('Выберите события для применения');
   const target=selectedNpcId(m),sharedLedger=m.ledger||{},npcLedger=target===MAIN_TARGET?{}:currentCharLedger(m);
   // Guard even if the preview has become stale due to non-chat metadata edits.
   const toApply=p.reviewed.pending.filter(x=>selectedIds.has(`${x.key}#${x.ordinal}`)&&!matchingHistoryExists(sharedLedger,npcLedger,target!==MAIN_TARGET,x));
-  if(!toApply.length)return setStatus('신규로 적용할 사건이 없습니다');
-  if(!window.confirm(`선택한 신규 사건 ${toApply.length}건을 현재 채팅 기록에 추가할까요? 기존 사건·수동 기록은 유지합니다.${p.reviewed.errors.length?` 분석 실패 ${p.reviewed.errors.length}개 메시지는 제외됩니다.`:''}`))return;
+  if(!toApply.length)return setStatus('Нет новых событий для применения');
+  if(!window.confirm(`Выбранных новых событий: ${toApply.length} — добавить в историю текущего чата? Прежние события и ручные записи сохраняются.${p.reviewed.errors.length?` Ошибка анализа ${p.reviewed.errors.length} сообщений будут исключены.`:''}`))return;
   const backupShared=structuredClone(m.ledger||{}),backupNpc=target===MAIN_TARGET?null:structuredClone(npcLedger),prior=m.historyStateReviewInfo;
   try{
    const added=appendHistorySelections({ledger:m.ledger,npcLedger,multiNpc:target!==MAIN_TARGET,
     personaId:m.userPersonaIdentity,targetId:target,config:m.config,candidates:toApply,
     selectedIds:new Set(toApply.map(x=>`${x.key}#${x.ordinal}`))});
    m.historyStateReviewInfo={appliedAt:new Date().toISOString(),count:added,scanned:p.total,failed:p.reviewed.errors.length,chatId:c.chatId,target};
-   if(!await persist())throw new Error('메타데이터 저장 실패');
-   historyStatePreview=null;refresh();setStatus(`기존 채팅 상태 재분석 · 신규 사건 ${added}건 적용 완료`);
-  }catch(err){m.ledger=backupShared;if(backupNpc)npcTracking(m).ledgers[target]=backupNpc;m.historyStateReviewInfo=prior;refresh();setStatus(`재분석 적용 실패: ${err.message}`);}
+   if(!await persist())throw new Error('Не удалось сохранить метаданные');
+   historyStatePreview=null;refresh();setStatus(`Повторный анализ истории · новых событий: ${added} · применено`);
+  }catch(err){m.ledger=backupShared;if(backupNpc)npcTracking(m).ledgers[target]=backupNpc;m.historyStateReviewInfo=prior;refresh();setStatus(`Ошибка применения повторного анализа: ${err.message}`);}
   return;
  }
  if(act==='previewTimeSync'){
-  const c=S();if(!c?.chatId)return setStatus('현재 채팅이 없습니다');
+  const c=S();if(!c?.chatId)return setStatus('Нет текущего чата');
   timeSyncPreview={chatId:c.chatId,result:recoverHistoryTime(c.chat||[])};
-  render();setStatus(`명시적 시간 단서 ${timeSyncPreview.result.matches.length}건 · 검토 후 적용하세요`);return;
+  render();setStatus(`Явных указаний времени: ${timeSyncPreview.result.matches.length} · проверьте перед применением`);return;
  }
- if(act==='cancelTimeSync'){timeSyncPreview=null;render();setStatus('동기화를 취소했습니다. 데이터 변경 없음');return;}
+ if(act==='cancelTimeSync'){timeSyncPreview=null;render();setStatus('Синхронизация отменена. Данные сохраняются');return;}
  if(act==='applyTimeSync'){
   const m=meta(),c=S(),p=timeSyncPreview;
-  if(!p||p.chatId!==c.chatId)return setStatus('현재 채팅과 동기화 분석 대상이 다릅니다');
+  if(!p||p.chatId!==c.chatId)return setStatus('Текущий чат не совпадает с источником синхронизации');
   const selected=new Set([...el('abop-panel').querySelectorAll('input[data-sync-index]:checked')].map(t=>Number(t.dataset.syncIndex)));
   const matches=p.result.matches.filter((_,i)=>selected.has(i));
-  if(!matches.length)return setStatus('적용할 단서를 선택하세요');
+  if(!matches.length)return setStatus('Выберите записи для применения');
   // Historical state reanalysis may already have restored this event. Do not
   // count the same message's time skip (or cycle start) a second time.
   const uniqueMatches=matches.filter(x=>{
@@ -1175,41 +1175,41 @@ async function handlePanelClick(e){
    const recorded=[...(m.ledger?.[x.key]?.events||[]),...(adjacentBotKey?(m.ledger?.[adjacentBotKey]?.events||[]):[])];
    return !recorded.some(e=>!String(e.id||'').startsWith('history-time-sync:')&&eventIdentity(e)===eventIdentity(x));
   });
-  if(!uniqueMatches.length)return setStatus('선택한 단서는 이미 다른 사건 기록에 반영되어 있습니다. 중복 적용하지 않았습니다.');
+  if(!uniqueMatches.length)return setStatus('Выбранные указания уже учтены в событиях. Повторное применение пропущено.');
   const existing=Object.values(m.ledger||{}).flatMap(r=>r?.events||[]).filter(e=>e.kind==='time_advance'&&!String(e.id).startsWith('history-time-sync:'));
-  if(existing.length&&!window.confirm(`이미 시간 진행 사건 ${existing.length}건이 기록되어 있습니다. 중복 시간 산정 가능성이 있습니다. 계속할까요?`))return;
-  if(!window.confirm(`검토한 ${uniqueMatches.length}개 기록을 적용하고 이전 동기화 기록은 대체할까요?${uniqueMatches.length!==matches.length?` 중복 ${matches.length-uniqueMatches.length}건은 제외됩니다.`:''}`))return;
+  if(existing.length&&!window.confirm(`Уже записано событий течения времени: ${existing.length}. Возможно повторное начисление времени. Продолжить?`))return;
+  if(!window.confirm(`Проверенные ${uniqueMatches.length} записей применить вместо прежней синхронизации?${uniqueMatches.length!==matches.length?` повторов: ${matches.length-uniqueMatches.length} · исключено.`:''}`))return;
   const backup=structuredClone(m.ledger||{}),previous=m.timeSyncInfo;
   try{
    applyHistorySync(m.ledger,{matches:uniqueMatches},m.userPersonaIdentity);
    m.timeSyncInfo={count:uniqueMatches.length,appliedAt:new Date().toISOString(),chatId:c.chatId};
-   if(!await persist())throw new Error('메타데이터 저장 실패');
-   timeSyncPreview=null;refresh();setStatus(`기존 채팅 시간 동기화 ${uniqueMatches.length}건 적용 완료`);
-  }catch(err){m.ledger=backup;m.timeSyncInfo=previous;refresh();setStatus(`동기화 실패: ${err.message}`);}
+   if(!await persist())throw new Error('Не удалось сохранить метаданные');
+   timeSyncPreview=null;refresh();setStatus(`Синхронизация времени по истории: ${uniqueMatches.length} · применено`);
+  }catch(err){m.ledger=backup;m.timeSyncInfo=previous;refresh();setStatus(`Ошибка синхронизации: ${err.message}`);}
   return;
  }
- if(act==='rebuild'){refresh();setStatus('선택 분기 상태 재계산 완료');return;}
+ if(act==='rebuild'){refresh();setStatus('Состояние выбранной ветки пересчитано');return;}
  if(act==='reanalyze'){await analyzeLatest({force:true});return;}
  if(act==='init'){await initialProfileAnalyze();return;}
  if(act==='advance'){
   const n=Number(el('abop-hours')?.value);
-  if(!Number.isFinite(n)||n<=0||n>8760)return setStatus('0보다 크고 8760 이하인 시간 입력');
-  await addManualEvents([{kind:'time_advance',hours:n}]);setStatus(`시간 +${n}h 반영`);return;
+  if(!Number.isFinite(n)||n<=0||n>8760)return setStatus('Введите время больше 0 и не больше 8760 часов');
+  await addManualEvents([{kind:'time_advance',hours:n}]);setStatus(`Учтено: +${n} ч`);return;
  }
  if(act==='recordMedication'){
   const role=t.dataset.role;if(!['char','user'].includes(role))return;
   const drug=el(`abop-drug-${role}`)?.value,mode=el(`abop-drug-mode-${role}`)?.value;
   if(!['oral_suppressant','long_suppressant','emergency_suppressant','scent_blocker','oral_contraceptive','emergency_contraceptive','symptom_inducer','cycle_inducer','unlicensed_mixture'].includes(drug))return;
   if(!['normal','misuse','unlicensed'].includes(mode))return;
-  await addManualEvents([{kind:'medication',person:role,drug,use_mode:mode}]);setStatus(`${role.toUpperCase()} 약물 복용 사건 기록 완료`);return;
+  await addManualEvents([{kind:'medication',person:role,drug,use_mode:mode}]);setStatus(`${role.toUpperCase()} Приём препарата записан`);return;
  }
  if(act==='exposure'){
-  if(meta()?.config?.pregnancyEnabled===false)return setStatus('임신 기능이 꺼져 있습니다. 설정에서 ON으로 변경하세요');
-  const gestator=window.prompt('임신 대상: char / user (취소 가능)','char');if(!['char','user'].includes(gestator))return;
+  if(meta()?.config?.pregnancyEnabled===false)return setStatus('Симуляция беременности отключена. Включите её в настройках.');
+  const gestator=window.prompt('Вынашивающий персонаж: char / user (можно отменить)','char');if(!['char','user'].includes(gestator))return;
   const donor=gestator==='char'?'user':'char';
-  const n=Number(window.prompt('이 장면에서 확인된 생식기관 내부 사정 횟수 (1~30)','1'));
-  if(!Number.isInteger(n)||n<1||n>30)return setStatus('횟수는 1~30의 정수');
-  if(!window.confirm('유효한 삽입과 생식기관 내부 사정이 모두 확인되었습니까?'))return;
+  const n=Number(window.prompt('Подтверждённое число эякуляций в репродуктивный путь в этой сцене (1–30)','1'));
+  if(!Number.isInteger(n)||n<1||n>30)return setStatus('Количество должно быть целым числом от 1 до 30');
+  if(!window.confirm('Подтверждены и проникновение, и эякуляция внутрь репродуктивного пути?'))return;
   await addManualEvents([{kind:'exposure',gestator,donor,penetration:true,deposition:true,depositions:n}]);return;
  }
  if(act==='export'){

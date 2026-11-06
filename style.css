@@ -244,3 +244,15 @@
 .abop-reset-row{border:1px solid var(--abop-border,#7775);padding:10px;margin:8px 0}
 .abop-reset-row b{display:block;margin-bottom:8px}
 .abop-reset-row select{min-width:100px;max-width:100%}
+
+/* Russian labels: keep navigation and long action labels inside narrow panels. */
+#abop-panel .abop-nav button small{max-width:100%;overflow-wrap:anywhere;line-height:1.3}
+#abop-panel button[data-action]{white-space:normal;overflow-wrap:anywhere}
+
+/* Russian labels: keep navigation and long action labels inside narrow panels. */
+#abop-panel .abop-nav button small{max-width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.3}
+#abop-panel button[data-action]{white-space:normal;overflow-wrap:anywhere}
+
+/* Russian labels: keep navigation and long action labels inside narrow panels. */
+#abop-panel .abop-nav button small{max-width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.3}
+#abop-panel button[data-action]{white-space:normal;overflow-wrap:anywhere}

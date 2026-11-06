@@ -1,182 +1,182 @@
 /** UI localization only. All saved and modeled IDs remain unchanged. */
 export const PREFERENCE_LABELS = Object.freeze({
-  "power_exchange": "권력 교환(D/s)",
-  "power_dynamics": "권력 관계(D/s)",
-  "dominance": "지배 성향",
-  "submission": "복종 성향",
-  "switch": "스위치 성향",
-  "fear_play": "공포 플레이",
-  "verbal_teasing": "언어적 도발",
-  "sensory_play": "감각 플레이",
-  "loss_of_control": "통제권 상실",
-  "praise": "칭찬 플레이",
-  "praise_kink": "칭찬 플레이",
-  "slow_burn": "서서히 깊어지는 관계",
-  "quiet_intimacy": "조용한 친밀감",
-  "emotional_vulnerability": "감정적 취약성",
-  "being_pursued": "구애받기",
-  "possessiveness": "소유욕",
-  "exhibitionism": "노출 플레이",
-  "exposure": "노출",
-  "embarrassment": "수치심 플레이",
-  "embarrassment_play": "수치심 플레이",
-  "humiliation": "굴욕 플레이",
-  "humiliation_play": "굴욕 플레이",
-  "degradation": "비하 플레이",
-  "degradation_play": "비하 플레이",
-  "aftercare": "애프터케어",
-  "roleplay": "역할극",
-  "physical_closeness": "신체 밀착",
-  "gentle_touch": "부드러운 스킨십",
-  "restraint": "구속 플레이",
-  "bondage": "본디지(구속 플레이)",
+  "power_exchange": "Обмен властью(D/s)",
+  "power_dynamics": "Властные отношения(D/s)",
+  "dominance": "Доминирование",
+  "submission": "Подчинение",
+  "switch": "Смена ролей",
+  "fear_play": "Игра со страхом",
+  "verbal_teasing": "Словесные провокации",
+  "sensory_play": "Сенсорная игра",
+  "loss_of_control": "Потеря контроля",
+  "praise": "Игра с похвалой",
+  "praise_kink": "Игра с похвалой",
+  "slow_burn": "Постепенное сближение",
+  "quiet_intimacy": "Тихая близость",
+  "emotional_vulnerability": "Эмоциональная уязвимость",
+  "being_pursued": "Принимать ухаживания",
+  "possessiveness": "Собственничество",
+  "exhibitionism": "Эксгибиционизм",
+  "exposure": "Эпизодов",
+  "embarrassment": "Игра со смущением",
+  "embarrassment_play": "Игра со смущением",
+  "humiliation": "Игра с унижением",
+  "humiliation_play": "Игра с унижением",
+  "degradation": "Игра с принижением",
+  "degradation_play": "Игра с принижением",
+  "aftercare": "Забота после близости",
+  "roleplay": "Ролевая игра",
+  "physical_closeness": "Тесный телесный контакт",
+  "gentle_touch": "Нежные прикосновения",
+  "restraint": "Игра со связыванием",
+  "bondage": "Бондаж (связывание)",
   "bdsm": "BDSM",
-  "sadism": "가학 성향",
-  "masochism": "피학 성향",
-  "sadomasochism": "가학·피학 성향",
-  "pet_play": "펫 플레이",
-  "impact_play": "타격 플레이",
-  "blindfold": "눈가리개 플레이",
-  "temperature_play": "온도 플레이",
-  "sensation_play": "감각 플레이",
-  "sensory_deprivation": "감각 차단 플레이",
-  "verbal_play": "언어 플레이",
-  "dirty_talk": "노골적인 대화",
-  "verbal_domination": "언어적 지배",
-  "praise_play": "칭찬 플레이",
-  "control": "통제",
-  "control_play": "통제 플레이",
-  "obedience": "복종",
-  "discipline": "규율 플레이",
-  "command": "명령 플레이",
-  "commands": "명령 플레이",
-  "possessive_play": "소유 표현",
-  "territorial": "영역 행동",
-  "jealousy": "질투",
-  "protectiveness": "보호 성향",
-  "affection": "애정 표현",
-  "cuddling": "껴안기",
-  "hugging": "포옹",
-  "kissing": "입맞춤",
-  "touch": "스킨십",
-  "massage": "마사지",
-  "eye_contact": "시선 교환",
-  "eye_contact_play": "시선 플레이",
-  "soft_dom": "부드러운 지배",
-  "pleasure_dom": "쾌감 중심 지배",
-  "teasing": "장난스러운 도발",
-  "tease": "도발",
-  "tease_and_denial": "도발과 지연",
-  "voice_kink": "목소리 취향",
-  "whispering": "귓속말",
-  "longing": "갈망",
-  "intensity": "강렬한 친밀감",
-  "caregiving": "돌봄 성향",
-  "caretaking": "돌봄 성향",
-  "nurturing": "다정한 돌봄",
-  "intimacy": "친밀감",
-  "slow_pace": "느린 진행",
-  "being_watched": "보여지는 상황",
-  "watching": "바라보기",
-  "public_exposure": "공개적인 노출",
-  "private_exposure": "사적인 노출",
-  "shame": "수치심",
-  "shame_play": "수치심 플레이",
-  "ownership": "소유 관계",
-  "ownership_play": "소유 관계 플레이",
-  "romantic_tension": "연애적 긴장감",
-  "breath_play": "호흡 관련 플레이",
-  "marking": "표식",
-  "nesting": "네스팅",
-  "knotting": "노팅",
-  "body_worship": "신체 찬미",
-  "pet_names": "애칭",
-  "curiosity": "호기심",
-  "physical_affection": "신체적 애정 표현",
-  "intimacy_avoidance": "친밀감 회피",
-  "being_needed": "필요로 여겨지기",
-  "being_desired": "욕망의 대상이 되기",
-  "being_called_cute": "귀엽다는 말을 듣기",
-  "bonding_with_user": "유저와 유대 형성",
-  "tight_squeezing": "강하게 쥐거나 조이기",
-  "contact_request": "접촉 요청",
-  "romantic_commitment": "진지한 연애 관계에 대한 헌신",
-  "being_in_relationship": "연인 관계에 있기",
-  "exclusive_relationship": "독점적인 연애 관계",
-  "wants_bond_mark": "각인받고 싶어 함",
-  "no_cleanup_before_sex": "관계 전 씻지 않는 상황",
-  "edging": "절정 직전까지 자극하다 멈추기",
-  "edging_partner": "상대를 절정 직전까지 자극하다 멈추기",
-  "being_edged": "절정 직전까지 자극받다가 멈추기",
-  "surrendering_to_restraint_and_control": "구속과 통제를 상대에게 맡기기"
+  "sadism": "Садизм",
+  "masochism": "Мазохизм",
+  "sadomasochism": "Садомазохизм",
+  "pet_play": "Пет-плей",
+  "impact_play": "Ударная игра",
+  "blindfold": "Игра с повязкой на глазах",
+  "temperature_play": "Температурная игра",
+  "sensation_play": "Сенсорная игра",
+  "sensory_deprivation": "Сенсорная депривация",
+  "verbal_play": "Словесная игра",
+  "dirty_talk": "Откровенные разговоры",
+  "verbal_domination": "Словесное доминирование",
+  "praise_play": "Игра с похвалой",
+  "control": "Контроль",
+  "control_play": "Игра с контролем",
+  "obedience": "Подчинение",
+  "discipline": "Дисциплина",
+  "command": "Игра с приказами",
+  "commands": "Игра с приказами",
+  "possessive_play": "Демонстрация принадлежности",
+  "territorial": "Территориальное поведение",
+  "jealousy": "Ревность",
+  "protectiveness": "Стремление защищать",
+  "affection": "Проявления нежности",
+  "cuddling": "Объятия",
+  "hugging": "Объятия",
+  "kissing": "Поцелуи",
+  "touch": "Телесная нежность",
+  "massage": "Массаж",
+  "eye_contact": "Обмен взглядами",
+  "eye_contact_play": "Игра со взглядами",
+  "soft_dom": "Мягкое доминирование",
+  "pleasure_dom": "Доминирование ради удовольствия",
+  "teasing": "Игривое поддразнивание",
+  "tease": "Провокации",
+  "tease_and_denial": "Поддразнивание и отсрочка",
+  "voice_kink": "Интерес к голосу",
+  "whispering": "Шёпот",
+  "longing": "Томление",
+  "intensity": "Страстная близость",
+  "caregiving": "Стремление заботиться",
+  "caretaking": "Стремление заботиться",
+  "nurturing": "Нежная забота",
+  "intimacy": "Близость",
+  "slow_pace": "Медленный темп",
+  "being_watched": "Быть на виду",
+  "watching": "Наблюдать",
+  "public_exposure": "Публичное обнажение",
+  "private_exposure": "Обнажение наедине",
+  "shame": "Смущение",
+  "shame_play": "Игра со смущением",
+  "ownership": "Отношения принадлежности",
+  "ownership_play": "Игра в принадлежность",
+  "romantic_tension": "Романтическое напряжение",
+  "breath_play": "Дыхательная игра",
+  "marking": "Метки",
+  "nesting": "Гнездование",
+  "knotting": "Узел",
+  "body_worship": "Поклонение телу",
+  "pet_names": "Ласковые обращения",
+  "curiosity": "Любопытство",
+  "physical_affection": "Телесные проявления нежности",
+  "intimacy_avoidance": "Избегание близости",
+  "being_needed": "Чувствовать себя нужным",
+  "being_desired": "Быть объектом желания",
+  "being_called_cute": "Слышать, что тебя считают милым",
+  "bonding_with_user": "Сближение с пользователем",
+  "tight_squeezing": "Крепкое сжатие",
+  "contact_request": "Просьба о прикосновении",
+  "romantic_commitment": "Готовность к серьёзным романтическим отношениям",
+  "being_in_relationship": "Быть в романтических отношениях",
+  "exclusive_relationship": "Исключительные романтические отношения",
+  "wants_bond_mark": "Желание получить метку связи",
+  "no_cleanup_before_sex": "Близость без мытья перед ней",
+  "edging": "Остановка стимуляции перед оргазмом",
+  "edging_partner": "Доводить партнёра почти до оргазма и останавливаться",
+  "being_edged": "Получать стимуляцию с остановкой перед оргазмом",
+  "surrendering_to_restraint_and_control": "Доверить партнёру связывание и контроль"
 });
 export const PREFERENCE_LEVELS = Object.freeze({
-  "latent": "잠재적 관심",
-  "liked": "선호",
-  "strongly_liked": "강한 선호",
-  "disliked": "비선호",
-  "restricted": "경계"
+  "latent": "Возможный интерес",
+  "liked": "Нравится",
+  "strongly_liked": "Очень нравится",
+  "disliked": "Не нравится",
+  "restricted": "Граница"
 });
 export const ATTITUDE_LABELS = Object.freeze({
-  "open": "열려 있음",
-  "reserved": "소극적임",
-  "curious": "호기심만 있음"
+  "open": "Открытость",
+  "reserved": "Сдержанность",
+  "curious": "Только любопытство"
 });
 export const CYCLE_PHASE_LABELS = Object.freeze({
-  "quiet": "안정기",
-  "prodrome": "전조기",
-  "active": "활성기",
-  "recovery": "회복기",
-  "suspended": "중단",
-  "none": "해당 없음"
+  "quiet": "Покой",
+  "prodrome": "Предвестники",
+  "active": "Активная фаза",
+  "recovery": "Восстановление",
+  "suspended": "Приостановлено",
+  "none": "Неприменимо"
 });
 export const INSTINCT_LABELS = Object.freeze({
-  "approach": "접근",
-  "contact_seek": "접촉 요청",
-  "contact_request": "접촉 요청",
-  "protect": "보호",
-  "jealousy": "질투",
-  "territorial": "영역 행동",
-  "nesting": "네스팅",
-  "bond_partner_seek": "결합 상대 탐색"
+  "approach": "Сближение",
+  "contact_seek": "Просьба о прикосновении",
+  "contact_request": "Просьба о прикосновении",
+  "protect": "Защита",
+  "jealousy": "Ревность",
+  "territorial": "Территориальное поведение",
+  "nesting": "Гнездование",
+  "bond_partner_seek": "Поиск партнёра для связи"
 });
 export const PREGNANCY_LABELS = Object.freeze({
-  "none": "임신 아님",
-  "conception_pending": "임신 여부 판정 중",
-  "pregnant_unaware": "임신 · 미인지",
-  "pregnant_suspected": "임신 · 의심",
-  "pregnant_confirmed": "임신 · 확인",
-  "due": "출산 예정",
-  "postpartum": "산후 회복",
-  "unaware": "모름",
-  "suspected": "의심",
-  "confirmed": "확인",
-  "ended": "임신 종료"
+  "none": "Нет беременности",
+  "conception_pending": "Ожидается результат зачатия",
+  "pregnant_unaware": "Беременность · не знает",
+  "pregnant_suspected": "Беременность · подозревает",
+  "pregnant_confirmed": "Беременность · подтверждена",
+  "due": "Ожидаемые роды",
+  "postpartum": "Послеродовое восстановление",
+  "unaware": "Не знает",
+  "suspected": "Подозревает",
+  "confirmed": "Подтверждено",
+  "ended": "Беременность завершена"
 });
 
 // The stored machine ID is never translated or rewritten. Labels can be
 // generated by the analysis model, by an explicit one-time AI localization,
 // or by this safe local fallback when no model is connected.
 const NATURAL_KOREAN_FIXES = Object.freeze({
-  '엣징으로 몰아가기':'절정 직전까지 자극하다 멈추기',
-  '엣징':'절정 직전까지 자극하다 멈추기',
-  '구속과 통제에 맡기기':'구속과 통제를 상대에게 맡기기',
-  '각인 마크 원하기':'각인받고 싶어 함'
+  '엣징으로 몰아가기':'Остановка стимуляции перед оргазмом',
+  '엣징':'Остановка стимуляции перед оргазмом',
+  '구속과 통제에 맡기기':'Доверить партнёру связывание и контроль',
+  '각인 마크 원하기':'Желание получить метку связи'
 });
 const WORDS = Object.freeze({
-  being:'',wants:'원함',want:'원함',likes:'좋아함',like:'좋아함',
-  romantic:'연애',bond:'각인',mark:'표식',marking:'표식',
-  intimacy:'친밀감',physical:'신체적',emotional:'감정적',
-  relationship:'관계',exclusive:'독점적',public:'공개',private:'사적',
-  touch:'접촉',contact:'접촉',request:'요청',kissing:'입맞춤',kiss:'입맞춤',
-  hugging:'포옹',hug:'포옹',soft:'부드러운',gentle:'다정한',
-  control:'통제',restraint:'구속',surrender:'맡기기',surrendering:'맡기기',
-  no:'없음',before:'전',after:'후',cleanup:'씻기',sex:'관계',
-  praise:'칭찬',voice:'목소리',teasing:'장난스러운 도발',
-  partner:'상대방',with:'함께',slow:'천천히',care:'돌봄',
-  play:'놀이',need:'필요',needed:'필요',desire:'욕망',desired:'원해짐',
-  being_called:'불리기',cute:'귀엽다',submission:'복종',dominance:'지배',
-  edging:'절정 직전 자극 중단'
+  being:'',wants:'желание',want:'желание',likes:'нравится',like:'нравится',
+  romantic:'романтика',bond:'Метка связи',mark:'Метки',marking:'Метки',
+  intimacy:'Близость',physical:'телесный',emotional:'эмоциональный',
+  relationship:'отношения',exclusive:'исключительный',public:'публичный',private:'личный',
+  touch:'Контакт',contact:'Контакт',request:'просьба',kissing:'Поцелуи',kiss:'Поцелуи',
+  hugging:'Объятия',hug:'Объятия',soft:'мягкий',gentle:'нежный',
+  control:'Контроль',restraint:'связывание',surrender:'доверить',surrendering:'доверить',
+  no:'Нет',before:'до',after:'после',cleanup:'мытьё',sex:'отношения',
+  praise:'похвала',voice:'голос',teasing:'Игривое поддразнивание',
+  partner:'партнёр',with:'вместе',slow:'медленно',care:'забота',
+  play:'игра',need:'потребность',needed:'потребность',desire:'желание',desired:'быть желанным',
+  being_called:'обращение',cute:'милый',submission:'Подчинение',dominance:'доминирование',
+  edging:'остановка стимуляции перед оргазмом'
 });
 export function normalizePreferenceKorean(value){
  const raw=String(value??'').trim().replace(/\s+/g,' ').slice(0,90);
@@ -185,31 +185,31 @@ export function normalizePreferenceKorean(value){
 export function preferenceNeedsReview(preference){
  const id=String(preference?.id??'').trim().toLowerCase();
  const label=String(preference?.label??'').trim();
- return Boolean((id&&!PREFERENCE_LABELS[id]) || (label&&(/[a-z]{2,}[_-][a-z]{2,}/i.test(label)||NATURAL_KOREAN_FIXES[label]||!/[가-힣]/u.test(label))));
+ return Boolean((id&&!PREFERENCE_LABELS[id]) || (label&&(/[a-z]{2,}[_-][a-z]{2,}/i.test(label)||NATURAL_KOREAN_FIXES[label]||!/[А-Яа-яЁё]/u.test(label))));
 }
 export function preferenceLabel(id){
  const raw=String(id??'').trim().slice(0,80);
- if(!raw)return '표시명 확인 필요';
+ if(!raw)return 'Требуется уточнить подпись';
  const key=raw.toLowerCase();
  if(Object.hasOwn(PREFERENCE_LABELS,key))return PREFERENCE_LABELS[key];
- if(/[가-힣]/u.test(raw))return normalizePreferenceKorean(raw);
+ if(/[А-Яа-яЁё]/u.test(raw))return normalizePreferenceKorean(raw);
  // Unknown machine tags are never exposed as raw English in the UI.
- // Fully recognized compound tags get a simple Korean approximation;
+ // Fully recognized compound tags get a simple Russian approximation;
  // ambiguous tags require an explicit AI review rather than invented meaning.
- if(!/^[a-z0-9_-]+$/i.test(raw))return '표시명 확인 필요';
+ if(!/^[a-z0-9_-]+$/i.test(raw))return 'Требуется уточнить подпись';
  const tokens=key.split(/[_-]+/).filter(Boolean);
- if(!tokens.length||!tokens.every(x=>Object.hasOwn(WORDS,x)))return '표시명 확인 필요';
- return tokens.map(x=>WORDS[x]).filter(Boolean).join(' · ') || '표시명 확인 필요';
+ if(!tokens.length||!tokens.every(x=>Object.hasOwn(WORDS,x)))return 'Требуется уточнить подпись';
+ return tokens.map(x=>WORDS[x]).filter(Boolean).join(' · ') || 'Требуется уточнить подпись';
 }
 export function preferenceDisplayLabel(preference,translations={}){
  const id=String(preference?.id??'').trim();
  const label=String(preference?.label??'').trim();
  // Explicitly user-edited entries take precedence over AI-derived translations.
- if((preference?.source==='user_added_setup'||preference?.source==='custom')&&/[가-힣]/u.test(label))
+ if((preference?.source==='user_added_setup'||preference?.source==='custom')&&label)
   return normalizePreferenceKorean(label);
  const replacement=String(id&&Object.hasOwn(translations||{},id)?translations[id]:'').trim();
- if(/[가-힣]/u.test(replacement))return normalizePreferenceKorean(replacement);
- if(/[가-힣]/u.test(label))return normalizePreferenceKorean(label);
+ if(/[А-Яа-яЁё]/u.test(replacement))return normalizePreferenceKorean(replacement);
+ if(/[А-Яа-яЁё]/u.test(label))return normalizePreferenceKorean(label);
  return preferenceLabel(id);
 }
 export const preferenceLevelLabel = value => PREFERENCE_LEVELS[value] ?? String(value??'');
@@ -218,7 +218,7 @@ export const cyclePhaseLabel = value => CYCLE_PHASE_LABELS[value] ?? String(valu
 export const instinctLabel = value => INSTINCT_LABELS[value] ?? String(value??'');
 export const pregnancyLabel = value => PREGNANCY_LABELS[value] ?? String(value??'');
 /** If the user leaves the translated label untouched, preserve the machine ID.
- * A newly typed Korean label is either mapped to a known ID or saved verbatim.
+ * A newly typed Russian label is either mapped to a known ID or saved verbatim.
  */
 export function preferenceIdFromEdit(text, previousId='', previousLabel='') {
   const edited=String(text??'').trim().slice(0,80);
@@ -232,22 +232,22 @@ export function preferenceIdFromEdit(text, previousId='', previousLabel='') {
 
 /** Presentation only: raw scene values remain untouched in event/state storage. */
 export const SCENE_LABELS = Object.freeze({
-  'on_back':'등을 대고 누운 자세', 'on_stomach':'엎드린 자세',
-  'standing':'서 있는 자세', 'sitting':'앉은 자세', 'kneeling':'무릎 꿇은 자세',
-  'lying_down':'누운 자세', 'side_lying':'옆으로 누운 자세',
-  'penetration':'삽입', 'kissing':'입맞춤', 'hugging':'포옹',
-  'touching':'접촉', 'holding_hands':'손잡기', 'cuddling':'껴안기',
-  'contact_request':'접촉 요청', 'none':'없음',
-  'seated_close':'가까이 앉은 자세', 'sitting_close':'가까이 앉은 자세',
-  'face_to_face':'서로 마주 보는 자세', 'seated_face_to_face':'마주 앉은 자세',
-  'hand_held_to_cheek':'상대의 손을 뺨에 댄 상태', 'hand_on_cheek':'뺨을 감싸는 손',
-  'forehead_on_shoulder':'어깨에 이마를 기댄 자세', 'resting_forehead_on_shoulder':'어깨에 이마를 기댄 자세',
-  'on_lap':'무릎 위에 앉은 자세', 'leaning_close':'몸을 가까이 기울인 자세',
-  'hand_holding':'손잡기', 'holding_wrist':'손목 잡기', 'wrist_holding':'손목 잡기',
-  'neck_kiss':'목덜미 입맞춤', 'kissing_neck':'목덜미 입맞춤',
-  'cheek_touch':'뺨에 손 대기', 'hand_to_cheek':'뺨에 손 대기',
-  'hand_kiss':'손등 입맞춤', 'talking':'대화', 'conversation':'대화',
-  'eye_contact':'눈 맞춤', 'embrace':'포옹', 'hug':'포옹'
+  'on_back':'Лёжа на спине', 'on_stomach':'Лёжа на животе',
+  'standing':'Стоя', 'sitting':'Сидя', 'kneeling':'На коленях',
+  'lying_down':'Лёжа', 'side_lying':'Лёжа на боку',
+  'penetration':'Проникновение', 'kissing':'Поцелуи', 'hugging':'Объятия',
+  'touching':'Контакт', 'holding_hands':'Держатся за руки', 'cuddling':'Объятия',
+  'contact_request':'Просьба о прикосновении', 'none':'Нет',
+  'seated_close':'Сидят рядом', 'sitting_close':'Сидят рядом',
+  'face_to_face':'Лицом друг к другу', 'seated_face_to_face':'Сидят лицом друг к другу',
+  'hand_held_to_cheek':'Рука партнёра прижата к щеке', 'hand_on_cheek':'Ладонь обхватывает щёку',
+  'forehead_on_shoulder':'Лоб опирается на плечо', 'resting_forehead_on_shoulder':'Лоб опирается на плечо',
+  'on_lap':'Сидя на коленях партнёра', 'leaning_close':'Наклонившись ближе',
+  'hand_holding':'Держатся за руки', 'holding_wrist':'Держит за запястье', 'wrist_holding':'Держит за запястье',
+  'neck_kiss':'Поцелуй в загривок', 'kissing_neck':'Поцелуй в загривок',
+  'cheek_touch':'Прикосновение к щеке', 'hand_to_cheek':'Прикосновение к щеке',
+  'hand_kiss':'Поцелуй руки', 'talking':'Разговор', 'conversation':'Разговор',
+  'eye_contact':'Зрительный контакт', 'embrace':'Объятия', 'hug':'Объятия'
 });
 export function sceneDisplayLabel(value) {
   const raw=String(value??'').trim();
@@ -260,41 +260,41 @@ export function sceneDisplayLabel(value) {
   return raw;
 }
 export function sceneRecordSummary(scene) {
-  if (!scene || typeof scene!=='object') return '기록 없음';
+  if (!scene || typeof scene!=='object') return 'Нет записей';
   const parts=[scene.posture,scene.contact,scene.vocal,scene.speech,...(Array.isArray(scene.play)?scene.play:[])].filter(Boolean).map(sceneDisplayLabel);
-  return [...new Set(parts)].join(' · ') || '세부 내용 없음';
+  return [...new Set(parts)].join(' · ') || 'Нет подробностей';
 }
 
 /** Localized UI labels. Never use these to rewrite persisted enums. */
 export const CYCLE_MODE_LABELS = Object.freeze({
-  enabled:'히트·러트 추적 중',disabled:'히트·러트 추적 중지',
-  absent:'히트·러트 없음',unset:'히트·러트 미설정'
+  enabled:'Течка / гон отслеживаются',disabled:'Отслеживание течки / гона остановлено',
+  absent:'Течка / гон отсутствуют',unset:'Течка / гон не заданы'
 });
 export const DRUG_LABELS = Object.freeze({
-  oral_suppressant:'경구 억제제', long_suppressant:'장기 억제제',
-  emergency_suppressant:'응급 억제제', scent_blocker:'페로몬 차단제',
-  symptom_inducer:'증상 유도제', cycle_inducer:'주기 유도제',
-  unlicensed_mixture:'비승인 혼합약물',
-  emergency_contraceptive:'응급 피임약', oral_contraceptive:'일반 피임약'
+  oral_suppressant:'Пероральный подавитель', long_suppressant:'Подавитель длительного действия',
+  emergency_suppressant:'Экстренный подавитель', scent_blocker:'Блокатор феромонов',
+  symptom_inducer:'Индуктор симптомов', cycle_inducer:'Индуктор цикла',
+  unlicensed_mixture:'Неодобренная смесь',
+  emergency_contraceptive:'Экстренный контрацептив', oral_contraceptive:'Обычный контрацептив'
 });
 export const ADVERSE_LABELS = Object.freeze({
-  general:'일반 부작용',unexpected_heat_or_rut:'예기치 않은 히트·러트 발현',
-  induced:'약물 유발 증상'
+  general:'Общий побочный эффект',unexpected_heat_or_rut:'Неожиданная течка / гон',
+  induced:'Симптомы, вызванные препаратом'
 });
 export const RATE_LABELS = Object.freeze({
-  rise:'배란 가능성 증가기',fertile:'가임기',peak:'최고 가임기',fall:'가임기 종료 단계'
+  rise:'Рост вероятности овуляции',fertile:'Фертильный период',peak:'Пик фертильности',fall:'Завершение фертильного периода'
 });
 export const EVENT_KIND_LABELS = Object.freeze({
-  time_advance:'서사 시간 경과',preference:'성향 정보 기록',scene:'장면 정보 기록',
-  scene_unverified:'현재 장면 확인 불가',heat_start:'히트 시작',rut_start:'러트 시작',menstruation_start:'월경 시작',menstruation_end:'월경 종료',
-  ovulation:'배란',bond:'각인 성립',bond_loss:'각인 상실',
-  medication:'약물 사용',exposure:'임신 가능 사건',
-  pregnancy_reveal:'임신 인지',delivery:'출산',pregnancy_end:'임신 종료',
-  npc_register:'NPC 등록'
+  time_advance:'Течение сюжетного времени',preference:'Запись предпочтения',scene:'Запись сцены',
+  scene_unverified:'Текущая сцена не подтверждена',heat_start:'Начало течки',rut_start:'Начало гона',menstruation_start:'Начало менструации',menstruation_end:'Конец менструации',
+  ovulation:'Овуляция',bond:'Установление связи',bond_loss:'Утрата связи',
+  medication:'Приём препарата',exposure:'Возможность зачатия',
+  pregnancy_reveal:'Осознание беременности',delivery:'Роды',pregnancy_end:'Беременность завершена',
+  npc_register:'NPC Зарегистрировать'
 });
 export const personRoleLabel = value => value==='char'?'캐릭터':value==='user'?'유저':String(value??'');
-export const cycleModeLabel = value => CYCLE_MODE_LABELS[value] ?? String(value??'미설정');
+export const cycleModeLabel = value => CYCLE_MODE_LABELS[value] ?? String(value??'Не задано');
 export const drugLabel = value => DRUG_LABELS[value] ?? String(value??'');
 export const adverseLabel = value => ADVERSE_LABELS[value] ?? String(value??'');
 export const rateLabel = value => RATE_LABELS[value] ?? String(value??'');
-export const eventKindLabel = value => EVENT_KIND_LABELS[value] ?? String(value??'기타 사건');
+export const eventKindLabel = value => EVENT_KIND_LABELS[value] ?? String(value??'Другое событие');
