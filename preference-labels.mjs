@@ -128,6 +128,7 @@ export const CYCLE_PHASE_LABELS = Object.freeze({
   "active": "Активная фаза",
   "recovery": "Восстановление",
   "suspended": "Приостановлено",
+  "paused": "Приостановлено",
   "none": "Неприменимо"
 });
 export const INSTINCT_LABELS = Object.freeze({
@@ -286,7 +287,7 @@ export const RATE_LABELS = Object.freeze({
 });
 export const EVENT_KIND_LABELS = Object.freeze({
   time_advance:'Течение сюжетного времени',preference:'Запись предпочтения',scene:'Запись сцены',
-  scene_unverified:'Текущая сцена не подтверждена',heat_start:'Начало течки',rut_start:'Начало гона',menstruation_start:'Начало менструации',menstruation_end:'Конец менструации',
+  scene_unverified:'Текущая сцена не подтверждена',heat_start:'Начало течки',rut_start:'Начало гона',heat_end:'Конец течки',rut_end:'Конец гона',menstruation_start:'Начало менструации',menstruation_end:'Конец менструации',
   ovulation:'Овуляция',bond:'Установление связи',bond_loss:'Утрата связи',
   medication:'Приём препарата',exposure:'Возможность зачатия',
   pregnancy_reveal:'Осознание беременности',delivery:'Роды',pregnancy_end:'Беременность завершена',

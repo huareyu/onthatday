@@ -249,6 +249,11 @@
 #abop-panel .abop-nav button small{max-width:100%;overflow-wrap:anywhere;line-height:1.3}
 #abop-panel button[data-action]{white-space:normal;overflow-wrap:anywhere}
 
+/* Per-person cycle settings share the responsive two-column profile layout. */
+#abop-panel .abop-cycle-settings{min-width:0;border:1px solid var(--ab-soft-line);border-radius:3px;padding:12px;background:var(--ab-raised)}
+#abop-panel .abop-cycle-settings .abop-fields label{overflow-wrap:anywhere}
+#abop-panel .abop-cycle-controls{margin-top:10px}
+
 /* Russian labels: keep navigation and long action labels inside narrow panels. */
 #abop-panel .abop-nav button small{max-width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.3}
 #abop-panel button[data-action]{white-space:normal;overflow-wrap:anywhere}

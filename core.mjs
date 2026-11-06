@@ -2,6 +2,7 @@
 import {anatomyDefault} from './profile.mjs';
 import {initialVitalBaseline,recalculateVitals,validVitalNumber,CONDITION_OBSERVATIONS,PHEROMONE_OBSERVATIONS} from './vitals.mjs';
 import {openingMenstruationEvidence} from './menstruation-evidence.mjs';
+import {readCycleTiming} from './cycle-settings.mjs';
 export const VERSION = 2;
 export const PHASE_RATES = Object.freeze({ quiet: .10, prodrome: .40, active: .75, recovery: .35 });
 export const INSTINCTS = Object.freeze({
@@ -110,11 +111,16 @@ export function rangeProbability(offset,conf){
  if(offset<12)return conf.rate.peak;
  return conf.rate.fall;
 }
+function stoppedCycleWindow(c,time){
+ if(!Number.isFinite(c.endedHour)||!Number.isFinite(c.resumeHour)||time<c.endedHour||time>=c.resumeHour)return null;
+ const quietAt=Math.min(c.resumeHour,c.endedHour+c.recoveryHours);
+ return {quietAt,prodromeAt:Math.max(quietAt,c.resumeHour-c.prodromeHours),nextStart:c.resumeHour};
+}
 export function phaseAt(c,t){
  if(!c?.enabled||!Number.isFinite(c.intervalHours)||c.intervalHours<=0)return'quiet';
- const total=c.prodromeHours+c.activeHours+c.recoveryHours;
+ const stopped=stoppedCycleWindow(c,t);
+ if(stopped)return t<stopped.quietAt?'recovery':t>=stopped.prodromeAt?'prodrome':'quiet';
  const remaining=((t-c.anchorHour)%c.intervalHours+c.intervalHours)%c.intervalHours;
- const untilStart=(c.anchorHour-t)%c.intervalHours;
  if(t<c.anchorHour && t>=c.anchorHour-c.prodromeHours)return'prodrome';
  if(t<c.anchorHour)return'quiet';
  if(remaining<c.activeHours)return'active';
@@ -144,6 +150,14 @@ export function cycleForecast(p, time, seed=''){
   else if(current==='active')result.currentEndHours=result.nextRecoveryHours;
   else if(current==='recovery')result.currentEndHours=result.nextQuietHours;
   else if(current==='quiet')result.currentEndHours=result.nextProdromeHours;
+  const stopped=stoppedCycleWindow(c,time);
+  if(stopped){
+   result.nextActiveHours=stopped.nextStart-time;
+   result.nextRecoveryHours=stopped.nextStart+active-time;
+   result.nextQuietHours=time<stopped.quietAt?stopped.quietAt-time:stopped.nextStart+active+recovery-time;
+   result.nextProdromeHours=time<stopped.prodromeAt?stopped.prodromeAt-time:stopped.nextStart+interval-prodrome-time;
+   result.currentEndHours=current==='recovery'?stopped.quietAt-time:current==='quiet'?stopped.prodromeAt-time:stopped.nextStart-time;
+  }
   if(c.inducedUntil>time){result.phase='active';result.currentEndHours=Math.max(0,c.inducedUntil-time);}
  }
  if(!m.enabled){result.menstruationStatus='absent';return result;}
@@ -398,7 +412,20 @@ export function applyEvent(state,input){
   break;
  }
  case 'heat_start':case 'rut_start':{
-  if(p&&p.cycle.enabled){p.cycle.anchorHour=state.clockHours;p.cycle.ovulationHour=null;}
+  if(p&&p.cycle.enabled){
+   p.cycle.anchorHour=state.clockHours;p.cycle.ovulationHour=null;
+   delete p.cycle.endedHour;delete p.cycle.resumeHour;
+  }
+  break;
+ }
+ case 'heat_end':case 'rut_end':{
+  if(p?.cycle.enabled&&phaseForPerson(p,state.clockHours)==='active'){
+   const c=p.cycle;
+   // Finish only this episode; keep the next scheduled start and all past events.
+   c.endedHour=state.clockHours;
+   c.resumeHour=c.anchorHour+Math.max(0,Math.floor((state.clockHours-c.anchorHour)/c.intervalHours)+1)*c.intervalHours;
+   c.inducedUntil=null;
+  }
   break;
  }
  case 'ovulation':if(p?.fertile.gestate)p.cycle.ovulationHour=state.clockHours;break;
@@ -449,7 +476,7 @@ export function applyEvent(state,input){
    p.adverse.push({id:`${e.id}:induced`,drug:e.drug,at:state.clockHours,type:'unexpected_heat_or_rut'});
   }
   if(['symptom_inducer','cycle_inducer'].includes(e.drug)){
-   if(e.drug==='cycle_inducer'&&p.cycle.enabled){p.cycle.anchorHour=state.clockHours;p.cycle.ovulationHour=null;}
+   if(e.drug==='cycle_inducer'&&p.cycle.enabled){p.cycle.anchorHour=state.clockHours;p.cycle.ovulationHour=null;delete p.cycle.endedHour;delete p.cycle.resumeHour;}
    p.cycle.inducedUntil=state.clockHours+duration;
   }
   if(e.drug==='emergency_contraceptive'){
@@ -549,6 +576,8 @@ export function replay(seed,canon,config,rows,overrides={}){
   if(!Object.hasOwn(changes,'menstruationEnabled'))p.menstruation.enabled=p.secondary==='omega'||p.sex==='female';
   if(!Object.hasOwn(changes,'cycleEnabled')&&!Object.hasOwn(changes,'cycleMode')){p.cycle.enabled=['alpha','omega'].includes(p.secondary);p.cycle.mode=p.secondary==='unknown'?'unset':p.cycle.enabled?'enabled':'absent';}
   if(!Object.hasOwn(changes,'anatomy'))p.anatomy=anatomyDefault(p.sex,p.secondary);
+  const timing=readCycleTiming(changes?.cycleTiming);
+  if(timing){Object.assign(p.cycle,timing);p.cycle.anchorHour=timing.intervalHours;}
  }
  for(const row of rows){for(const evt of row.events||[])applyEvent(s,evt);}
  updateCycles(s);return s;
@@ -561,6 +590,7 @@ export function formatPrompt(s,hideTruth=false){
  if(s.config.pregnancyEnabled===false)out.push('PREGNANCY TRACKING OFF for this chat: do not introduce tracker-generated pregnancy, conception outcomes, pregnancy symptoms or due dates.');
  for(const [id,p] of Object.entries(s.people)){
   const cycle=cycleDisplay(p);
+  if(cycle.enabled)out.push(`${id.toUpperCase()} cycle timing (story hours): interval between starts=${p.cycle.intervalHours}; active=${p.cycle.activeHours}; prodrome=${p.cycle.prodromeHours}; recovery=${p.cycle.recoveryHours}. Current phase=${p.cycle.phase}; next active phase in ${cycleForecast(p,s.clockHours,s.seed).nextActiveHours??'unknown'} story hours.`);
   const bondData=bondEffects(s,id);if(bondData)out.push(`${id.toUpperCase()} bond effects: partners=${bondData.partners.join(',')}; active=${bondData.active}; partner pheromone sensitivity ${bondData.partnerScentSensitivity>0?'+':''}${bondData.partnerScentSensitivity}; others sensitivity ${bondData.otherScentSensitivity}; others discomfort +${bondData.otherScentDiscomfort}; cycle separation stress +${bondData.heatSeparationStress} (max once if heat or rut is active), baseline separated stress +${s.config.bondBaseSeparationStress??10}. Asymmetric bond mode=${s.config.asymmetricBond?'ON (Omega effects only)':'OFF (both partners affected)'}.`);
   out.push(`${id.toUpperCase()} ${p.name}: sex=${p.sex}; ABO=${p.secondary}; anatomy=${p.anatomy||'not specified'}; cycle=${cycleMode(p)} (${cycle.enabled?cycle.phase:'no active cycle'}); menses=${p.menstruation.phase}; bond=${(p.bondPartners||[]).join(',')||'none'}; simulated condition=${p.body.condition}/100, pheromone emission=${p.pheromone.emission}/100, sensitivity=${p.body.sensitivity}, stress=${p.body.stress}; recent meds=${p.medication.filter(m=>m.until>=s.clockHours).map(m=>m.drug).join(',')||'none'}.`);
   if(p.anatomyDetail||p.inseminationOrgan)out.push(`${id.toUpperCase()} anatomical notes=${(p.anatomyDetail||'').slice(0,240)}; insemination anatomy=${(p.inseminationOrgan||'').slice(0,240)}.`);

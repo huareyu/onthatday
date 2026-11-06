@@ -1,9 +1,10 @@
 {
   "name": "abo-pixel-tracker",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
-    "check": "node --check analyzer.mjs && node --check connection.mjs && node --check core.mjs && node --check global-analysis-settings.mjs && node --check history-state.mjs && node --check index.js && node --check menu-launcher.mjs && node --check npc-tracking.mjs && node --check persona-sync.mjs && node --check preference-labels.mjs && node --check preference-localization.mjs && node --check profile-setup-input.mjs && node --check profile.mjs && node --check setup-options.mjs && node --check time-sync.mjs && node --check vitals.mjs && node --check worldinfo-drug-catalog.mjs && node --check display-postprocess.mjs && node --check scene-visibility.mjs && node --check profile-reset.mjs && node --check menstruation-evidence.mjs"
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check analyzer.mjs && node --check connection.mjs && node --check core.mjs && node --check cycle-settings.mjs && node --check global-analysis-settings.mjs && node --check history-state.mjs && node --check index.js && node --check menu-launcher.mjs && node --check npc-tracking.mjs && node --check persona-sync.mjs && node --check preference-labels.mjs && node --check preference-localization.mjs && node --check profile-setup-input.mjs && node --check profile.mjs && node --check setup-options.mjs && node --check time-sync.mjs && node --check vitals.mjs && node --check worldinfo-drug-catalog.mjs && node --check display-postprocess.mjs && node --check scene-visibility.mjs && node --check profile-reset.mjs && node --check menstruation-evidence.mjs"
   }
 }

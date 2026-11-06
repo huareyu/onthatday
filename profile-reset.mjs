@@ -1,7 +1,7 @@
 /* Profile reset helpers; only profile overrides/setup choices, never RP events. */
 export const RESETTABLE_FIELDS=Object.freeze([
  'sex','secondary','anatomy','anatomyDetail','inseminationOrgan','gestate','impregnate',
- 'menstruationEnabled','cycleEnabled','cycleMode','pheromoneScent','contactStyle',
+ 'menstruationEnabled','cycleEnabled','cycleMode','cycleTiming','pheromoneScent','contactStyle',
  'vocalStyle','speechStyle','baseCondition','basePheromone','name'
 ]);
 const SETUP_SOURCES=new Set(['user_approved_setup','user_added_setup']);

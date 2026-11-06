@@ -4,6 +4,6 @@
   "js": "index.js",
   "css": "style.css",
   "author": "Independent ABO Tracker Project",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "auto_update": true
 }

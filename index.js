@@ -22,6 +22,7 @@ import {POSTPROCESS_SCOPES,DEFAULT_POSTPROCESS,normalizedPostprocessSettings,dis
 import {sceneHasDetails,hasUsableScene,hasSceneHistory} from './scene-visibility.mjs';
 import {openingMenstruationEvidence} from './menstruation-evidence.mjs';
 import {RESETTABLE_FIELDS,resetProfileChoices} from './profile-reset.mjs';
+import {cycleTimingError,readCycleTiming} from './cycle-settings.mjs';
 const STORAGE='abo_pixel_tracker_independent_v1';
 const PROMPT='ABO_PIXEL_TRACKER_CONTINUITY_V1';
 const S=()=>SillyTavern.getContext();
@@ -559,7 +560,7 @@ function renderSetup(){
  const hint='<p class="abop-muted">Факты из карточки и персоны отделены от предположений по характеру. В профиль попадут только отмеченные пункты. Закреплённые вручную значения защищены.</p>';
  const owns=effectiveOverrides(m),roleReset=['char','user'].map(r=>{
   const list=Object.keys(owns?.[r]||{}).filter(k=>RESETTABLE_FIELDS.includes(k));
-  return `<div class="abop-reset-row"><b>${r.toUpperCase()} · Закреплено вручную ${list.length} </b><div class="abop-actions"><select id="abop-clear-field-${r}" aria-label="${r} Поле для открепления"><option value="">Выберите закреплённое поле</option>${list.map(k=>`<option value="${html(k)}">${html(({sex:'Пол',secondary:'Альфа · Бета · Омега',anatomy:'Тип тела',menstruationEnabled:'Наличие менструации',cycleEnabled:'Течка / гон',cycleMode:'Режим течки / гона',baseCondition:'Базовое самочувствие',basePheromone:'Базовые феромоны'})[k]||k)}</option>`).join('')}</select><button data-action="clearFixedField" data-role="${r}" ${list.length?'':'disabled'}>Открепить выбранное</button><button data-action="resetInitialProfile" data-role="${r}">Сбросить профиль</button></div></div>`;
+  return `<div class="abop-reset-row"><b>${r.toUpperCase()} · Закреплено вручную ${list.length} </b><div class="abop-actions"><select id="abop-clear-field-${r}" aria-label="${r} Поле для открепления"><option value="">Выберите закреплённое поле</option>${list.map(k=>`<option value="${html(k)}">${html(({sex:'Пол',secondary:'Альфа · Бета · Омега',anatomy:'Тип тела',menstruationEnabled:'Наличие менструации',cycleEnabled:'Течка / гон',cycleMode:'Режим течки / гона',cycleTiming:'Параметры цикла',baseCondition:'Базовое самочувствие',basePheromone:'Базовые феромоны'})[k]||k)}</option>`).join('')}</select><button data-action="clearFixedField" data-role="${r}" ${list.length?'':'disabled'}>Открепить выбранное</button><button data-action="resetInitialProfile" data-role="${r}">Сбросить профиль</button></div></div>`;
  }).join('');
  const resetBlock=`<section class="abop-frame"><header>◇ Сброс профиля · текущий чат</header><p class="abop-muted">Открепляет поля или перезапускает начальную настройку. История RP, события анализа и циклов сохраняются. Полный сброс затрагивает CHAR и текущую персону USER.</p>${roleReset}<div class="abop-actions"><button data-action="resetInitialProfile" data-role="both">Сбросить CHAR + USER</button></div></section>`;
  if(!draft||draft.chatId!==S().chatId||draft.personaIdentity!==m.userPersonaIdentity||draft.targetId!==selectedNpcId(m))return `<section class="abop-frame"><header>◇ Начальная настройка профиля</header><h3 class="abop-title">Комплексный анализ профиля</h3>${hint}<p>Предлагает анатомию, репродуктивные возможности, феромоны, особенности прикосновений, голоса, речи и близости. Если вторичный пол не задан в карточке или вручную, он предлагается по характеру и предпочтениям; анатомия выбирается из совместимых вариантов. Изменения вступят в силу только после выбора и применения.</p><button data-action="init">Создать предложения для CHAR + USER</button></section>${resetBlock}`;
@@ -641,6 +642,29 @@ function remainingLabel(hours){
  const minutes=Math.max(0,Math.ceil(hours*60));if(minutes===0)return 'Сейчас';
  const d=Math.floor(minutes/1440),h=Math.floor((minutes%1440)/60),min=minutes%60;
  return [d?`${d} дн.`:'',h?`${h} ч`:'',min?`${min} мин.`:''].filter(Boolean).join(' ')+' осталось';
+}
+function renderCycleControls(id,p){
+ if(!['char','user'].includes(id))return '';
+ const forecast=cycleForecast(p,state.clockHours,state.seed);
+ const available=cycleMode(p)==='enabled'&&['alpha','omega'].includes(p.secondary)&&!forecast.paused;
+ const active=forecast.phase==='active';
+ const noun=p.secondary==='alpha'?'гон':'течку';
+ const busy=working||postprocessBusy;
+ return `<div class="abop-actions abop-cycle-controls"><button type="button" data-action="startCycle" data-role="${id}" ${!available||active||busy?'disabled':''}>Начать ${noun}</button><button type="button" data-action="endCycle" data-role="${id}" ${!available||!active||busy?'disabled':''}>Завершить ${noun}</button></div>`;
+}
+function renderCycleSettings(people,m){
+ const profiles=people.filter(([id])=>['char','user'].includes(id)&&(id!=='char'||currentNpcReady(m)));
+ return `<section class="abop-frame" id="abop-cycle-settings"><header>◷ Настройки цикла</header><p class="abop-muted">Настраиваются отдельно для каждого персонажа в текущем чате. Интервал считается между началами течки или гона. Изменение длительностей пересчитывает записи чата; сюжетное время не меняется.</p>
+ <div class="abop-people">${profiles.map(([id,p])=>`<section class="abop-cycle-settings" id="abop-cycle-settings-${id}" data-cycle-settings="${id}"><h3 class="abop-minihead">${id.toUpperCase()} · ${html(p.name)}</h3>
+ <label class="abop-fieldlabel">Отслеживание течки / гона<select data-person="${id}" data-field="cycleMode">${choiceHTML([['enabled','Включено'],['disabled','Отключено'],['absent','Физиологически отсутствует'],['unset','Не задано']],cycleMode(p))}</select></label>
+ <div class="abop-fields"><label>Интервал между началами (дни)<input type="number" data-cycle-timing="intervalDays" min="0.0416666666666667" max="365" step="any" value="${p.cycle.intervalHours/24}" /></label>
+ <label>Активная фаза (часы)<input type="number" data-cycle-timing="activeHours" min="1" max="8760" step="any" value="${p.cycle.activeHours}" /></label>
+ <label>Предвестники (часы)<input type="number" data-cycle-timing="prodromeHours" min="0" max="8760" step="any" value="${p.cycle.prodromeHours}" /></label>
+ <label>Восстановление (часы)<input type="number" data-cycle-timing="recoveryHours" min="0" max="8760" step="any" value="${p.cycle.recoveryHours}" /></label></div>
+ <p class="abop-muted">Интервал должен вмещать все три фазы. 24 часа = 1 день. Значения применяются кнопкой «Сохранить параметры».</p>
+ <div class="abop-actions"><button type="button" data-action="saveCycleSettings" data-role="${id}" ${working||postprocessBusy?'disabled':''}>Сохранить параметры</button><button type="button" data-action="resetCycleSettings" data-role="${id}" ${!effectiveOverrides(m)?.[id]?.cycleTiming||working||postprocessBusy?'disabled':''}>Вернуть автоматические</button></div>
+ <p class="abop-muted">${effectiveOverrides(m)?.[id]?.cycleTiming?'Длительности заданы вручную.':'Используются автоматически назначенные длительности.'} Текущая фаза: ${html(cyclePhaseLabel(cycleForecast(p,state.clockHours,state.seed).phase))}.</p>
+ ${renderCycleControls(id,p)}${!['alpha','omega'].includes(p.secondary)?'<p class="abop-muted">Для ручного управления выберите альфу или омегу на вкладке «Состояние».</p>':''}</section>`).join('')}</div></section>`;
 }
 function cycleOverview(p,clock,seed,hideTruth=false){
  const f=cycleForecast(p,clock,seed);const m=f.mode;
@@ -759,7 +783,7 @@ function selectedSection(){
   <div class="abop-actions"><input id="abop-hours" type="number" min="0" step="1" placeholder="Прошло времени(h)" aria-label="Прошло времени"/><button data-action="advance">Применить время</button><button data-action="rebuild">Пересчитать</button></div>
   ${state.alerts.slice(-3).map(x=>displayAlertKo(x,m.config.hideTruth===true)).filter(Boolean).map(x=>`<p class="abop-note">${html(x)}</p>`).join('')}
   <details><summary>Последние события</summary>${state.events.slice(-14).reverse().map(e=>`<div class="abop-line">${Math.floor(e.at/24)} дн. · ${html(eventHiddenByPrivacy(e.kind,m.config)?'Событие со скрытым состоянием':eventSummaryKo(e))}</div>`).join('')||'Нет записей'}</details></section>`;
- if(tab==='cycles')return `<div class="abop-people">${people.map(([id,p])=>`<section class="abop-frame"><header>${id.toUpperCase()} · ${p.cycle.enabled?'Состояние цикла':p.menstruation.enabled?'Менструация и препараты':`${cycleModeLabel(cycleMode(p))} · Препараты`}</header><p class="abop-title">${html(p.name)}</p>${cycleOverview(p,state.clockHours,state.seed,m.config.hideTruth===true)}<div class="abop-actions"><button data-action="recordMenstruationStart" data-role="${id}" ${!p.menstruation.enabled?'disabled':''}>Записать начало менструации</button><button data-action="recordMenstruationEnd" data-role="${id}" ${cycleForecast(p,state.clockHours,state.seed).menstruationStatus!=='active'?'disabled':''}>Записать конец менструации</button></div><p class="abop-muted">Записывайте только подтверждённые в сюжете события. Явное указание менструации во вступлении автоматически учитывается в начальном состоянии.</p>
+ if(tab==='cycles')return `<div class="abop-people">${people.map(([id,p])=>`<section class="abop-frame"><header>${id.toUpperCase()} · ${p.cycle.enabled?'Состояние цикла':p.menstruation.enabled?'Менструация и препараты':`${cycleModeLabel(cycleMode(p))} · Препараты`}</header><p class="abop-title">${html(p.name)}</p>${cycleOverview(p,state.clockHours,state.seed,m.config.hideTruth===true)}${renderCycleControls(id,p)}${['char','user'].includes(id)?`<button type="button" data-action="openCycleSettings" data-role="${id}">Настроить цикл</button>`:''}<div class="abop-actions"><button data-action="recordMenstruationStart" data-role="${id}" ${!p.menstruation.enabled?'disabled':''}>Записать начало менструации</button><button data-action="recordMenstruationEnd" data-role="${id}" ${cycleForecast(p,state.clockHours,state.seed).menstruationStatus!=='active'?'disabled':''}>Записать конец менструации</button></div><p class="abop-muted">Записывайте только подтверждённые в сюжете события. Явное указание менструации во вступлении автоматически учитывается в начальном состоянии.</p>
  <details><summary>Препараты · побочные эффекты · толерантность</summary><p class="abop-muted">Приём ${p.medication.length} · записей побочных эффектов: ${p.adverse.length} </p>
  ${(p.adverse||[]).slice(-4).map(x=>`<div class="abop-line">${html(drugLabel(x.drug))} · ${html((x.symptoms||[x.type||'Другое']).map(adverseLabel).join(', '))}${Number.isFinite(x.until)&&x.until<state.clockHours?' (прошло)':''}</div>`).join('')||'<p class="abop-muted">Нет записей побочных эффектов</p>'}
  <p class="abop-muted">Толерантность: ${html(Object.entries(p.tolerance||{}).map(([k,v])=>`${drugLabel(k)} ${v}`).join(' · ')||'Нет записей')}</p>
@@ -771,7 +795,7 @@ function selectedSection(){
  if(tab==='preferences')return `<section class="abop-frame"><div class="abop-actions"><button data-action="translatePreferences" ${working?'disabled':''}>Перевести подписи с помощью ИИ</button></div><p class="abop-muted">Переводит неизвестные английские коды и улучшает формулировки. Выполняется отдельный запрос к ИИ; возможны расходы на API. </p><p class="abop-muted">[Граница]: То, к чему персонаж относится осторожно или с ограничениями. Это отдельная категория от запрета и неприязни.</p></section><div class="abop-people">${people.map(([id,p])=>`<section class="abop-frame"><header>${id.toUpperCase()} · Предпочтения</header><div class="abop-title">${html(p.name)}</div><p class="abop-muted">Отношение: ${html(attitudeLabel(p.preferences.attitude))}</p><h4 class="abop-minihead">Подтверждённые и наблюдавшиеся предпочтения</h4>${p.preferences.confirmed.map(x=>`<div class="abop-line">${html(localizedPreference(x,m,id))} <small>[${html(preferenceLevelLabel(x.level))}]</small></div>`).join('')||'<p class="abop-muted">Нет записей</p>'}<h4 class="abop-minihead">Возможные интересы и варианты</h4>${p.preferences.latent.map(x=>`<div class="abop-line">${html(localizedPreference(x,m,id))} <small>[${html(preferenceLevelLabel(x.level))}]</small></div>`).join('')||'<p class="abop-muted">Нет вариантов</p>'}</section>`).join('')}</div>`;
  if(tab==='scenes')return renderSceneTab(people);
  const shared=sharedAnalysisSettings();
- return `<section class="abop-frame"><header>◈ Настройки</header>
+ return `${renderCycleSettings(people,m)}<section class="abop-frame"><header>◈ Настройки</header>
   <div class="abop-title">Оформление</div>
   <label class="abop-fieldlabel">Цветовая тема<select data-theme-choice>${choiceHTML([['auto','Как в системе'],['light','Светлая'],['dark','Тёмная']],m.config.uiTheme||'auto')}</select></label>
   <p class="abop-muted">Тема и параметры симуляции сохраняются для каждого чата. Подключение анализа и лимит токенов общие для всех чатов.</p><hr/>
@@ -855,7 +879,7 @@ function render(){
  const m=meta(false);
  const theme=m?.config?.uiTheme||'auto';
  root.dataset.theme=theme==='light'||theme==='dark'?theme:(window.matchMedia?.('(prefers-color-scheme: dark)')?.matches?'dark':'light');
- root.innerHTML=`<div class="abop-window"><div class="abop-top"><span class="abop-brandmark" aria-hidden="true"></span><strong>Дела того дня <small>ТРЕКЕР ABO</small></strong><span class="abop-version">v1.0.1</span><button title="Переключить тему" aria-label="Переключить тему" data-action="themeCycle" class="abop-theme-button">◐</button><button title="Закрыть" aria-label="Закрыть" data-action="close">✕</button></div>
+ root.innerHTML=`<div class="abop-window"><div class="abop-top"><span class="abop-brandmark" aria-hidden="true"></span><strong>Дела того дня <small>ТРЕКЕР ABO</small></strong><span class="abop-version">v1.1.0</span><button title="Переключить тему" aria-label="Переключить тему" data-action="themeCycle" class="abop-theme-button">◐</button><button title="Закрыть" aria-label="Закрыть" data-action="close">✕</button></div>
  <div class="abop-shell"><nav class="abop-nav">${[['status','Состояние','▦'],['setup','Профиль','◈'],['cycles','Циклы','◷'],['fertility','Зачатие','✦'],['preferences','Интересы','♥'],['scenes','Сцены','▣'],['settings','Настройки','⚙']].map(([id,label,icon])=>`<button data-tab="${id}" class="${tab===id?'selected':''}"><span>${icon}</span><small>${label}</small></button>`).join('')}</nav>
  <main class="abop-main"><div class="abop-subhead"><span>◈ ${({'status':'Состояние','setup':'Начальная настройка','cycles':'Циклы','fertility':'Беременность','preferences':'Предпочтения','scenes':'Сцены','settings':'Настройки'}[tab]||tab.toUpperCase())} / ${html(S()?.chatId?'Текущий чат':'Нет чата')}</span><span class="abop-dot">● ${working?'Анализ…':'Готово'}</span></div>${selectedSection()}</main></div><footer class="abop-statusbar" id="abop-statusline" role="status" aria-live="polite">${html(status)}</footer></div>`;
  const scrollArea=root.querySelector('.abop-main');if(scrollArea)scrollArea.scrollTop=previousScroll;
@@ -972,24 +996,67 @@ async function handlePanelChange(e){
  const saved=(t.hasAttribute('data-connection')||t.dataset.custom||t.dataset.postprocess||t.hasAttribute('data-postprocess-scope'))?true:await persist();refresh();
  if(t.dataset.person)setStatus(saved?`${t.dataset.person.toUpperCase()} ${t.dataset.field==='secondary'?'ABO':'Настройки'} изменения сохранены автоматически`:'Ошибка сохранения настроек чата · проверьте консоль');
 }
-async function addManualEvents(events){
- const m=meta(),src=sourceForCurrent();syncCanon();if(!m||!src)return setStatus('Сначала начните диалог');
- if(!currentNpcReady(m))return setStatus('Сначала выберите NPC для отслеживания CHAR');
+async function addManualEvents(events,{latestMessage=false}={}){
+ const chat=S().chat||[],last=latestMessage?chat.findLastIndex(msg=>msg&&!msg.is_system&&String(msg.mes||'').trim()):-1;
+ const m=meta(),src=latestMessage?(last>=0?{key:uniqKey(chat[last],last)}:null):sourceForCurrent();syncCanon();if(!m||!src){setStatus('Сначала начните диалог');return false;}
+ if(!currentNpcReady(m)){setStatus('Сначала выберите NPC для отслеживания CHAR');return false;}
  const key=src.key,target=selectedNpcId(m),ledger=currentCharLedger(m);let rec=ledger[key]||{analyzed:false,events:[],manual:[]};
- if(rec.personaId&&rec.personaId!==m.userPersonaIdentity)return setStatus('Этот ответ относится к прежней USER персоне. Записывайте события после нового ответа.');
- const rows=events.map((e,i)=>({...e,id:`${key}/manual:${Date.now()}:${i}`,...(e.kind==='bond'?{allowMultipleAtCreation:m.config.asymmetricBond===true}:{})}));
+ if(rec.personaId&&rec.personaId!==m.userPersonaIdentity){setStatus('Этот ответ относится к прежней USER персоне. Записывайте события после нового ответа.');return false;}
+ const batchId=globalThis.crypto?.randomUUID?.()||`${Date.now()}:${Math.random()}`;
+ const rows=events.map((e,i)=>({...e,id:`${key}/manual:${batchId}:${i}`,...(e.kind==='bond'?{allowMultipleAtCreation:m.config.asymmetricBond===true}:{})}));
  if(target!==MAIN_TARGET){
   const shared=rows.filter(sharedEvent),local=rows.filter(e=>!sharedEvent(e));
   if(shared.length){const base=m.ledger[key]||{events:[],manual:[]};base.events.push(...shared);base.manual.push(...shared);base.personaId=m.userPersonaIdentity;m.ledger[key]=base;}
   rec.manual.push(...local);rec.events.push(...local);
  }else{rec.manual.push(...rows);rec.events.push(...rows);}
- rec.personaId=m.userPersonaIdentity;ledger[key]=rec;await persist();refresh();
+ rec.personaId=m.userPersonaIdentity;ledger[key]=rec;const saved=await persist();refresh();return saved;
 }
 async function handlePanelClick(e){
  const t=e.target.closest('button');if(!t)return;
  if(t.dataset.tab){tab=t.dataset.tab;render();const a=el('abop-panel')?.querySelector('.abop-main');if(a)a.scrollTop=0;return;}
  const act=t.dataset.action;if(!act)return;
  if(act==='close'){panelOpen=false;render();return;}
+ if(act==='openCycleSettings'){
+  tab='settings';render();el(`abop-cycle-settings-${t.dataset.role}`)?.scrollIntoView({block:'start',behavior:'smooth'});return;
+ }
+ if(act==='saveCycleSettings'||act==='resetCycleSettings'){
+  if(working||postprocessBusy)return setStatus('Дождитесь окончания анализа и перевода.');
+  const m=meta(),role=t.dataset.role;
+  if(!m||!['char','user'].includes(role)||(role==='char'&&!currentNpcReady(m)))return;
+  let timing=null;
+  if(act==='saveCycleSettings'){
+   const form=el(`abop-cycle-settings-${role}`);
+   const input=field=>{
+    const value=form?.querySelector(`[data-cycle-timing="${field}"]`)?.value;
+    return typeof value==='string'&&value.trim()!==''?Number(value):NaN;
+   };
+   const values={intervalHours:input('intervalDays')*24,activeHours:input('activeHours'),prodromeHours:input('prodromeHours'),recoveryHours:input('recoveryHours')};
+   const error=cycleTimingError(values);if(error)return setStatus(error);
+   timing=readCycleTiming(values);
+  }
+  const own=currentRoleOverrides(m,role),previous=own.cycleTiming;
+  if(timing)own.cycleTiming=timing;else delete own.cycleTiming;
+  if(!await persist()){
+   if(previous===undefined)delete own.cycleTiming;else own.cycleTiming=previous;
+   refresh();return setStatus('Не удалось сохранить параметры цикла. Прежние значения восстановлены.');
+  }
+  refresh();setStatus(`${role.toUpperCase()} · ${timing?'Параметры цикла сохранены':'Автоматические параметры цикла восстановлены'}`);return;
+ }
+ if(act==='startCycle'||act==='endCycle'){
+  if(working||postprocessBusy)return setStatus('Дождитесь окончания анализа и перевода.');
+  const m=meta(),role=t.dataset.role,s=branchState(),p=s?.people?.[role];
+  if(!m||!['char','user'].includes(role)||!p)return;
+  const forecast=cycleForecast(p,s.clockHours,s.seed);
+  if(cycleMode(p)!=='enabled'||!['alpha','omega'].includes(p.secondary)||forecast.paused)
+   return setStatus('Ручное управление циклом недоступно в текущем состоянии.');
+  const isEnd=act==='endCycle',active=forecast.phase==='active';
+  if(isEnd&&!active)return setStatus('Активной течки или гона сейчас нет.');
+  if(!isEnd&&active)return setStatus('Течка или гон уже идёт.');
+  const before=structuredClone({ledger:m.ledger,npcTracking:m.npcTracking});
+  const kind=`${p.secondary==='alpha'?'rut':'heat'}_${isEnd?'end':'start'}`;
+  if(!await addManualEvents([{kind,person:role}],{latestMessage:true})){Object.assign(m,before);refresh();return;}
+  setStatus(`${role.toUpperCase()} · ${p.secondary==='alpha'?'Гон':'Течка'}: ${isEnd?'завершение записано':'начало записано'}`);return;
+ }
  if(act==='themeCycle'){const m=meta();m.config.uiTheme=m.config.uiTheme==='dark'?'light':'dark';await persist();refresh();return;}
  if(act==='singleNpc'){await switchNpc(MAIN_TARGET);return;}
  if(act==='multiNpc'){const m=meta(),t=npcTracking(m);if(m.initialProposal)t.pending[MAIN_TARGET]=m.initialProposal;t.mode='multi';t.activeId=t.activeId===MAIN_TARGET?'':t.activeId;m.initialProposal=t.pending[t.activeId]||null;await persist();refresh();setStatus('Режим нескольких персонажей · NPC выберите или добавьте вручную');return;}
